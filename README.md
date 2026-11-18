@@ -18,9 +18,9 @@
 
 ## Download
 
-Open the repository's **Actions** tab and select the latest successful **Windows build** run. Download the nightlauncher-win-x64 artifact. It contains NightLauncher.exe and a portable ZIP.
+After the main-branch Windows build and smoke tests pass, the workflow publishes an unsigned CI prerelease under **Releases** and uploads a downloadable executable and portable ZIP. The Actions run also retains the build artifact for 30 days.
 
-For a versioned GitHub Release, push a tag such as v1.0.0; the workflow will attach the executable and ZIP to that release.
+For a stable, versioned GitHub Release, push a tag such as v1.0.0; the workflow will attach the executable and ZIP to that release.
 
 The executable is unsigned. Windows SmartScreen may show an unknown-publisher warning. Only download builds from this repository, and review the source before running it.
 
