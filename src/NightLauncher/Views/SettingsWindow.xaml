@@ -1,0 +1,40 @@
+<Window x:Class="NightLauncher.Views.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Settings"
+        Width="600"
+        Height="430"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="#0B1020"
+        Foreground="#E2E8F0">
+    <Grid Margin="26">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="Settings &amp; privacy" FontSize="25" FontWeight="Bold"/>
+            <TextBlock Text="NightLauncher keeps your library on this PC." Foreground="#94A3B8" Margin="0,7,0,0"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Margin="0,24,0,12">
+            <TextBlock Text="LIBRARY FILE" Foreground="#A78BFA" FontWeight="Bold" FontSize="11"/>
+            <TextBlock x:Name="LibraryPathText" TextWrapping="Wrap" Margin="0,8,0,10" Foreground="#CBD5E1"/>
+            <Button Content="Copy library path" HorizontalAlignment="Left" Click="CopyPath_Click"/>
+            <Border Background="#111A2B" CornerRadius="10" Padding="15" Margin="0,20,0,0">
+                <StackPanel>
+                    <TextBlock Text="LOCAL-FIRST BY DESIGN" FontWeight="Bold" Foreground="#E9D5FF"/>
+                    <TextBlock Text="No telemetry, account login, cloud sync, credential collection, automatic downloads, DLL injection, process-memory access, or game-file patching."
+                               TextWrapping="Wrap" Foreground="#CBD5E1" Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+            <TextBlock Text="Games that require a store or publisher launcher still need that platform's normal ownership and authentication checks."
+                       TextWrapping="Wrap" Foreground="#FBBF24" Margin="0,16,0,0"/>
+        </StackPanel>
+
+        <Button Grid.Row="2" Content="Done" Style="{StaticResource PrimaryButtonStyle}"
+                HorizontalAlignment="Right" MinWidth="100" Click="Done_Click"/>
+    </Grid>
+</Window>
