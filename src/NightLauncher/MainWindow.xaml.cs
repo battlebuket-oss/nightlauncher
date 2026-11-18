@@ -162,6 +162,18 @@ public partial class MainWindow : Window
             return;
         }
 
+        var needsConfirmation = selected.NeedsLaunchConfirmation;
+        if (needsConfirmation)
+        {
+            var answer = MessageBox.Show(this,
+                $"This game entry came from an imported library. Confirm that you trust this executable before running it:\n\n{selected.ExecutablePath}\n\nContinue?",
+                "Review imported executable", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (answer != MessageBoxResult.Yes)
+            {
+                return;
+            }
+        }
+
         var result = _launcher.Launch(selected);
         SetStatus(result.Message);
 
@@ -172,6 +184,7 @@ public partial class MainWindow : Window
             return;
         }
 
+        selected.NeedsLaunchConfirmation = false;
         selected.LastLaunchedUtc = DateTimeOffset.UtcNow;
         SaveLibrary();
         UpdateDetails(selected);
