@@ -94,7 +94,8 @@ public partial class AddGameWindow : Window
             WorkingDirectory = directory,
             Category = _original?.Category ?? "PC Game",
             AddedUtc = _original?.AddedUtc ?? DateTimeOffset.UtcNow,
-            LastLaunchedUtc = _original?.LastLaunchedUtc
+            LastLaunchedUtc = _original?.LastLaunchedUtc,
+            NeedsLaunchConfirmation = _original?.NeedsLaunchConfirmation ?? false
         };
 
         DialogResult = true;
