@@ -73,6 +73,12 @@ public sealed class GameLibraryService
         ArgumentException.ThrowIfNullOrWhiteSpace(sourcePath);
         var imported = ReadGames(sourcePath);
         ValidateCollection(imported, assignMissingIds: true);
+        // Imported libraries are untrusted input. Require a one-time path review before launching each imported entry.
+        foreach (var game in imported)
+        {
+            game.NeedsLaunchConfirmation = true;
+        }
+
         return imported;
     }
 
