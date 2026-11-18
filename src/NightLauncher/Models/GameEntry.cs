@@ -12,6 +12,7 @@ public sealed class GameEntry
     public string Category { get; set; } = "PC Game";
     public DateTimeOffset AddedUtc { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? LastLaunchedUtc { get; set; }
+    public bool NeedsLaunchConfirmation { get; set; }
 
     [JsonIgnore]
     public string Initials
@@ -39,6 +40,7 @@ public sealed class GameEntry
         WorkingDirectory = WorkingDirectory,
         Category = Category,
         AddedUtc = AddedUtc,
-        LastLaunchedUtc = LastLaunchedUtc
+        LastLaunchedUtc = LastLaunchedUtc,
+        NeedsLaunchConfirmation = NeedsLaunchConfirmation
     };
 }
