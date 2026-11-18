@@ -1,0 +1,63 @@
+<Window x:Class="NightLauncher.Views.AddGameWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Game details"
+        Width="650"
+        Height="510"
+        MinWidth="560"
+        MinHeight="470"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        Background="#0B1020"
+        Foreground="#E2E8F0">
+    <Grid Margin="26">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,22">
+            <TextBlock x:Name="HeadingText" Text="Add a game" FontSize="25" FontWeight="Bold"/>
+            <TextBlock Text="Choose the executable you are allowed to run. Platform ownership and authentication are still handled by the game publisher."
+                       Foreground="#94A3B8" TextWrapping="Wrap" Margin="0,7,0,0"/>
+        </StackPanel>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="Display name" Foreground="#CBD5E1" Margin="0,0,0,7"/>
+            <TextBox x:Name="NameTextBox" Grid.Row="1" Margin="0,0,0,15" MaxLength="120"/>
+
+            <TextBlock Grid.Row="2" Text="Game executable (.exe)" Foreground="#CBD5E1" Margin="0,0,0,7"/>
+            <TextBox x:Name="ExecutableTextBox" Grid.Row="3" Margin="0,0,10,15" Grid.Column="0"/>
+            <Button Grid.Row="3" Grid.Column="1" Content="Browse…" Click="Browse_Click" VerticalAlignment="Top"/>
+
+            <TextBlock Grid.Row="4" Text="Launch arguments (optional)" Foreground="#CBD5E1" Margin="0,0,0,7"/>
+            <TextBox x:Name="ArgumentsTextBox" Grid.Row="4" Margin="0,28,0,0" Height="70"
+                     VerticalContentAlignment="Top" AcceptsReturn="True" TextWrapping="Wrap" MaxLength="4096"/>
+        </Grid>
+
+        <Grid Grid.Row="2" Margin="0,18,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="NightLauncher does not bypass DRM or sign-in requirements."
+                       Foreground="#64748B" VerticalAlignment="Center" TextWrapping="Wrap"/>
+            <Button Grid.Column="1" Content="Cancel" Margin="0,0,10,0" Click="Cancel_Click"/>
+            <Button Grid.Column="2" Content="Save game" Style="{StaticResource PrimaryButtonStyle}" Click="Save_Click"/>
+        </Grid>
+    </Grid>
+</Window>
