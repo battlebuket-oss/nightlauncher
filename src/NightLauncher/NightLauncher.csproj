@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>NightLauncher</RootNamespace>
+    <AssemblyName>NightLauncher</AssemblyName>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <Company>NightLauncher Contributors</Company>
+    <Product>NightLauncher</Product>
+    <Description>A free, local-first Windows game library and launch manager.</Description>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseAppHost>true</UseAppHost>
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+</Project>
