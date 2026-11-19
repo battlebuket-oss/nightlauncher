@@ -171,9 +171,19 @@ jobs:
           }
 
           Compress-Archive -Path "artifacts/publish/*" -DestinationPath "artifacts/NightLauncher-win-x64.zip" -Force
-          Get-FileHash $application -Algorithm SHA256 | Format-List
-          Get-FileHash $installer -Algorithm SHA256 | Format-List
-          Get-FileHash "artifacts/NightLauncher-win-x64.zip" -Algorithm SHA256 | Format-List
+
+          $checksumEntries = @(
+            [pscustomobject]@{ Path = $application; RelativePath = "publish/NightLauncher.exe" },
+            [pscustomobject]@{ Path = $installer; RelativePath = [IO.Path]::GetFileName($installer) },
+            [pscustomobject]@{ Path = "artifacts/NightLauncher-win-x64.zip"; RelativePath = "NightLauncher-win-x64.zip" }
+          )
+          $checksumLines = foreach ($entry in $checksumEntries) {
+            $digest = (Get-FileHash $entry.Path -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$digest  $($entry.RelativePath)"
+          }
+          $checksumManifest = "artifacts/SHA256SUMS.txt"
+          [IO.File]::WriteAllLines($checksumManifest, $checksumLines, [System.Text.UTF8Encoding]::new($false))
+          Get-Content $checksumManifest
 
       - name: Install and uninstall smoke test (preserve user data)
         shell: pwsh
@@ -242,6 +252,7 @@ jobs:
             artifacts/publish/NightLauncher.exe
             artifacts/NightLauncher-win-x64.zip
             artifacts/NightLauncher-Setup-*.exe
+            artifacts/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 30
 
@@ -266,6 +277,13 @@ jobs:
           name: nightlauncher-win-x64
           path: artifacts
 
+      - name: Verify downloaded release artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s artifacts/SHA256SUMS.txt
+          (cd artifacts && sha256sum --check SHA256SUMS.txt)
+
       - name: Publish CI build as a prerelease
         if: github.ref == 'refs/heads/main'
         env:
@@ -276,7 +294,7 @@ jobs:
           set -euo pipefail
           APP_VERSION="$(sed -n 's/.*<Version>\([^<]*\)<\/Version>.*/\1/p' src/NightLauncher/NightLauncher.csproj | head -n 1)"
           INSTALLER="artifacts/NightLauncher-Setup-${APP_VERSION}.exe"
-          ASSETS=( "artifacts/publish/NightLauncher.exe" "artifacts/NightLauncher-win-x64.zip" "$INSTALLER" )
+          ASSETS=( "artifacts/publish/NightLauncher.exe" "artifacts/NightLauncher-win-x64.zip" "$INSTALLER" "artifacts/SHA256SUMS.txt" )
           for asset in "${ASSETS[@]}"; do
             test -s "$asset" || { echo "Missing release asset: $asset" >&2; exit 1; }
           done
@@ -307,7 +325,7 @@ jobs:
           fi
 
           INSTALLER="artifacts/NightLauncher-Setup-${APP_VERSION}.exe"
-          ASSETS=( "artifacts/publish/NightLauncher.exe" "artifacts/NightLauncher-win-x64.zip" "$INSTALLER" )
+          ASSETS=( "artifacts/publish/NightLauncher.exe" "artifacts/NightLauncher-win-x64.zip" "$INSTALLER" "artifacts/SHA256SUMS.txt" )
           for asset in "${ASSETS[@]}"; do
             test -s "$asset" || { echo "Missing release asset: $asset" >&2; exit 1; }
           done
