@@ -162,6 +162,65 @@ jobs:
           Get-FileHash $installer -Algorithm SHA256 | Format-List
           Get-FileHash "artifacts/NightLauncher-win-x64.zip" -Algorithm SHA256 | Format-List
 
+      - name: Install and uninstall smoke test (preserve user data)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $installer = (Resolve-Path "artifacts/NightLauncher-Setup-1.2.1.exe").Path
+          $installRoot = Join-Path $env:LOCALAPPDATA "Programs\NightLauncher"
+          $appDataRoot = Join-Path $env:LOCALAPPDATA "NightLauncher"
+          $backupRoot = Join-Path $env:RUNNER_TEMP "NightLauncher-lifecycle-backups"
+
+          if (Test-Path $installRoot) {
+            throw "The runner already has a NightLauncher installation at $installRoot."
+          }
+
+          New-Item -ItemType Directory -Force -Path $appDataRoot, $backupRoot | Out-Null
+          $libraryMarker = Join-Path $appDataRoot "library.json"
+          $settingsMarker = Join-Path $appDataRoot "settings.json"
+          $backupMarker = Join-Path $backupRoot "NightLauncher-library-lifecycle-test.json"
+          Set-Content -Path $libraryMarker -Value '[{"Name":"Installer lifecycle test"}]' -NoNewline
+          @{ BackupDirectory = $backupRoot } | ConvertTo-Json | Set-Content -Path $settingsMarker -NoNewline
+          Set-Content -Path $backupMarker -Value '{"Backup":"must survive uninstall"}' -NoNewline
+
+          $install = Start-Process -FilePath $installer -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-" -Wait -PassThru
+          if ($install.ExitCode -ne 0) {
+            throw "Per-user install failed with exit code $($install.ExitCode)."
+          }
+
+          $installedExe = Join-Path $installRoot "NightLauncher.exe"
+          $uninstaller = Join-Path $installRoot "unins000.exe"
+          $startMenuShortcut = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs\NightLauncher.lnk"
+          if (-not (Test-Path $installedExe)) {
+            throw "Installer did not place NightLauncher.exe under the per-user application directory."
+          }
+          if (-not (Test-Path $uninstaller)) {
+            throw "Installer did not create its uninstaller."
+          }
+          if (-not (Test-Path $startMenuShortcut)) {
+            throw "Installer did not create the expected Start Menu shortcut."
+          }
+
+          $uninstall = Start-Process -FilePath $uninstaller -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART" -Wait -PassThru
+          if ($uninstall.ExitCode -ne 0) {
+            throw "Uninstall failed with exit code $($uninstall.ExitCode)."
+          }
+
+          if (Test-Path $installRoot) {
+            throw "Uninstall left application files behind at $installRoot."
+          }
+          if (Test-Path $startMenuShortcut) {
+            throw "Uninstall left the Start Menu shortcut behind."
+          }
+          foreach ($markerPath in @($libraryMarker, $settingsMarker, $backupMarker)) {
+            if (-not (Test-Path $markerPath)) {
+              throw "Uninstall unexpectedly removed user data: $markerPath"
+            }
+          }
+
+          "Per-user install/uninstall passed; library, settings, and backup data were preserved."
+          Get-FileHash $libraryMarker, $settingsMarker, $backupMarker -Algorithm SHA256 | Format-Table -AutoSize
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
