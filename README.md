@@ -36,7 +36,7 @@ For example, the Steam App ID for GTA V Legacy is `271590`. NightLauncher sends 
 
 ## Download and installation
 
-After the Windows build, smoke tests, vulnerability check, and packaging steps pass, the workflow publishes a CI prerelease containing the self-contained executable, portable ZIP, and per-user Windows installer. The Actions run also retains the artifacts for 30 days.
+After the Windows build, smoke tests, vulnerability check, and packaging steps pass, the workflow publishes a CI prerelease containing the self-contained executable, portable ZIP, and per-user Windows installer. The release also includes `SHA256SUMS.txt`, covering the self-contained EXE, installer, and portable ZIP. The publishing job verifies the manifest before uploading. On Windows, compare a downloaded file with its manifest entry using `Get-FileHash .\\NightLauncher.exe -Algorithm SHA256` (use the corresponding filename for the installer or ZIP). The Actions run also retains the artifacts for 30 days.
 
 For a stable, versioned GitHub Release, push a tag matching the application version, such as `v1.3.0`. The workflow attaches the executable, portable ZIP, and installer only after Authenticode signing and signature verification succeed. A tag with a mismatched version is rejected.
 
