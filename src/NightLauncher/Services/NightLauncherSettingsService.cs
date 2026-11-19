@@ -120,11 +120,13 @@ public sealed class NightLauncherSettingsService
             ?? throw new InvalidOperationException("The settings file has no parent directory.");
         Directory.CreateDirectory(parent);
 
-        var temporary = SettingsPath + ".tmp";
+        var temporary = SettingsPath + $".{Guid.NewGuid():N}.tmp";
+        var temporaryCreated = false;
         try
         {
-            using (var stream = new FileStream(temporary, FileMode.Create, FileAccess.Write, FileShare.None))
+            using (var stream = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None))
             {
+                temporaryCreated = true;
                 JsonSerializer.Serialize(stream, settings, SerializerOptions);
                 stream.Flush(flushToDisk: true);
             }
@@ -133,7 +135,7 @@ public sealed class NightLauncherSettingsService
         }
         finally
         {
-            if (File.Exists(temporary))
+            if (temporaryCreated && File.Exists(temporary))
             {
                 try
                 {

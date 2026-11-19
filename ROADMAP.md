@@ -9,6 +9,7 @@
 - [x] Persist preferred library sort mode without overwriting backup-folder settings
 - [x] User-triggered diagnostics ZIP export limited to bounded app logs and a basic runtime summary
 - [x] Favorites-only filter combinable with category and text search
+- [x] Diagnostics/settings writers use unique create-new temp files and preserve pre-existing neighboring files
 - [x] Open validated game install folders from the details pane
 - [x] Keyboard shortcuts for search, clear, launch, and remove; explicit automation names for search and game list
 - [x] Refresh Steam game names/install paths during discovery while preserving compatibility with older library JSON
