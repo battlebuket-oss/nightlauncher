@@ -1,4 +1,5 @@
 using System.IO;
+using System.Security;
 using Microsoft.Win32;
 using NightLauncher.Models;
 using NightLauncher.Services;
@@ -17,6 +18,7 @@ public partial class MainWindow : Window
     private GameLibraryBackupService _backups;
     private readonly NightLauncherSettingsService _settings = new();
     private readonly GameDiscoveryService _discovery = new();
+    private readonly SteamLibraryDiscoveryService _steamDiscovery = new();
     private readonly GameLauncher _launcher = new();
     private readonly ObservableCollection<GameEntry> _games = [];
     private ICollectionView? _gamesView;
@@ -389,6 +391,81 @@ public partial class MainWindow : Window
         GamesList.SelectedItem = additions[^1];
         GamesList.ScrollIntoView(additions[^1]);
         SetStatus($"Discovered and added {additions.Count} game(s) · launch review required");
+    }
+
+    private void DiscoverSteamGames_Click(object sender, RoutedEventArgs e)
+    {
+        IReadOnlyList<DiscoveredSteamGame> discovered;
+        try
+        {
+            System.Windows.Input.Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+            discovered = _steamDiscovery.DiscoverInstalledGames();
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or
+                                           InvalidDataException or SecurityException or ArgumentException)
+        {
+            MessageBox.Show(this, $"NightLauncher could not read the local Steam library metadata.\n\n{exception.Message}",
+                "Steam library scan failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        finally
+        {
+            System.Windows.Input.Mouse.OverrideCursor = null;
+        }
+
+        if (discovered.Count == 0)
+        {
+            MessageBox.Show(this,
+                "No installed Steam games were found. Check that Steam is installed and its library folders are available.",
+                "No installed Steam games found", MessageBoxButton.OK, MessageBoxImage.Information);
+            SetStatus("Steam scan complete · no installed games found");
+            return;
+        }
+
+        var additions = new List<GameEntry>();
+        var skipped = 0;
+        foreach (var steamGame in discovered)
+        {
+            if (_games.Any(existing =>
+                    string.Equals(existing.LaunchMode, "Steam", StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(existing.SteamAppId, steamGame.AppId, StringComparison.Ordinal)))
+            {
+                skipped++;
+                continue;
+            }
+
+            additions.Add(new GameEntry
+            {
+                Name = steamGame.Name,
+                LaunchMode = "Steam",
+                SteamAppId = steamGame.AppId,
+                Category = "Steam",
+                NeedsLaunchConfirmation = true
+            });
+        }
+
+        if (additions.Count == 0)
+        {
+            MessageBox.Show(this, $"Found {discovered.Count} installed Steam game(s). They are already in your library.",
+                "Steam library is up to date", MessageBoxButton.OK, MessageBoxImage.Information);
+            SetStatus($"Steam scan complete · {discovered.Count} already in library");
+            return;
+        }
+
+        foreach (var game in additions)
+        {
+            _games.Add(game);
+        }
+
+        SaveLibrary();
+        RefreshLibraryView();
+        GamesList.SelectedItem = additions[^1];
+        GamesList.ScrollIntoView(additions[^1]);
+        SetStatus($"Steam scan complete · added {additions.Count} game(s)");
+
+        MessageBox.Show(this,
+            $"Found {discovered.Count} installed Steam game(s). Added {additions.Count}; skipped {skipped} already in your library.\n\nNew entries require a one-time launch review and are handed to the official Steam client. Steam continues to perform its normal sign-in and ownership checks.",
+            "Steam library scan complete", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     private void Settings_Click(object sender, RoutedEventArgs e)
