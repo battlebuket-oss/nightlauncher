@@ -98,12 +98,12 @@ jobs:
           }
 
           $sourceDir = (Resolve-Path "artifacts/publish").Path
-          & $iscc "/DMyAppVersion=1.2.0" "/DSourceDir=$sourceDir" "installer/NightLauncher.iss"
+          & $iscc "/DMyAppVersion=1.2.1" "/DSourceDir=$sourceDir" "installer/NightLauncher.iss"
           if ($LASTEXITCODE -ne 0) {
             throw "Inno Setup compilation failed."
           }
 
-          $installer = "artifacts/NightLauncher-Setup-1.2.0.exe"
+          $installer = "artifacts/NightLauncher-Setup-1.2.1.exe"
           $application = "artifacts/publish/NightLauncher.exe"
           if (-not (Test-Path $installer)) {
             throw "Installer output was not created."
@@ -169,7 +169,7 @@ jobs:
           path: |
             artifacts/publish/NightLauncher.exe
             artifacts/NightLauncher-win-x64.zip
-            artifacts/NightLauncher-Setup-1.2.0.exe
+            artifacts/NightLauncher-Setup-1.2.1.exe
           if-no-files-found: error
           retention-days: 30
 
@@ -183,7 +183,7 @@ jobs:
           $assets = @(
             "artifacts/publish/NightLauncher.exe",
             "artifacts/NightLauncher-win-x64.zip",
-            "artifacts/NightLauncher-Setup-1.2.0.exe"
+            "artifacts/NightLauncher-Setup-1.2.1.exe"
           )
           $notes = "Automated Windows build from main. Development prerelease. Authenticode signing is applied only when the repository signing-certificate secrets are configured."
           gh release view $env:RELEASE_TAG *> $null
@@ -206,7 +206,7 @@ jobs:
           $assets = @(
             "artifacts/publish/NightLauncher.exe",
             "artifacts/NightLauncher-win-x64.zip",
-            "artifacts/NightLauncher-Setup-1.2.0.exe"
+            "artifacts/NightLauncher-Setup-1.2.1.exe"
           )
           $notes = "NightLauncher release. See the repository README and SECURITY.md for launch, backup, and trust details. Authenticode signing is applied only when the repository signing-certificate secrets are configured."
           gh release view $env:RELEASE_TAG *> $null

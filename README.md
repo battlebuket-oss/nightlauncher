@@ -16,7 +16,7 @@
 - Import and export the library as JSON.
 - Local-only storage under the user's Local AppData folder.
 - Automatic pre-change backups with a rolling retention limit of 20 copies.
-- Manual backup and restore controls in Settings; restore validates the file and marks launch targets for confirmation.
+- User-selectable backup storage and a selectable recovery-point list in Settings; restore validates the selected file and marks launch targets for confirmation.
 - Backward-compatible loading of library files created before Steam launch support.
 - Imported entries require a one-time confirmation before launch.
 - No telemetry, cloud account, credential collection, game-file patching, DLL injection, process-memory access, or automatic network calls.
@@ -34,7 +34,7 @@ For example, the Steam App ID for GTA V Legacy is `271590`. NightLauncher sends 
 
 After the Windows build, smoke tests, vulnerability check, and packaging steps pass, the workflow publishes a CI prerelease containing the self-contained executable, portable ZIP, and per-user Windows installer. The Actions run also retains the artifacts for 30 days.
 
-For a stable, versioned GitHub Release, push a tag such as `v1.2.0`; the workflow will attach the executable, portable ZIP, and installer.
+For a stable, versioned GitHub Release, push a tag such as `v1.2.1`; the workflow will attach the executable, portable ZIP, and installer.
 
 The release pipeline supports optional Authenticode signing. To enable it, repository administrators must configure the GitHub Actions secrets `WINDOWS_SIGNING_CERTIFICATE_BASE64` (a base64-encoded PFX file) and `WINDOWS_SIGNING_CERTIFICATE_PASSWORD`. Without both secrets, CI explicitly publishes unsigned binaries; Windows SmartScreen may show an unknown-publisher warning. Only download builds from this repository, and review the source before running it.
 
@@ -57,7 +57,7 @@ The output is NightLauncher.exe in the publish folder. It does not require a sep
 
     dotnet run --project tests/NightLauncher.SmokeTests/NightLauncher.SmokeTests.csproj -c Release
 
-The Windows smoke suite covers library persistence, JSON import/export, legacy library compatibility, Steam URI generation, backup/restore/retention, selected-folder discovery limits, launch-target validation, and WPF window/XAML initialization. The Windows workflow also checks NuGet packages for known vulnerabilities before creating the installer and release artifacts.
+The Windows smoke suite covers library persistence, JSON import/export, legacy library compatibility, Steam URI generation, backup/restore/retention, custom backup preference persistence, malformed settings/library files, storage failures, selected-folder discovery limits, launch-target validation, and WPF recovery-list initialization. The Windows workflow also checks NuGet packages for known vulnerabilities before creating the installer and release artifacts.
 
 ## Add a direct executable game
 
@@ -73,11 +73,11 @@ The library is stored at:
 
     %LocalAppData%\NightLauncher\library.json
 
-Rolling backups are stored at:
+The default backup location is:
 
     %LocalAppData%\NightLauncher\backups
 
-NightLauncher creates a backup before each change to an existing library and retains the 20 newest copies. You can create an additional backup or restore the newest backup from **Settings & privacy**. Restoring validates the file, first preserves the current library, and requires one-time confirmation before restored launch targets can run. Logs are stored locally under `%LocalAppData%\NightLauncher\logs` and rotated to bounded files. Export an additional backup to an external drive before reinstalling Windows or deleting the application data folder.
+You can choose another local or external folder in **Settings & privacy**. NightLauncher remembers the chosen folder in its local `settings.json` preference file. NightLauncher creates a backup before each change to an existing library and retains the 20 newest copies in the selected backup folder. You can choose a different folder (including a removable or external drive), create an additional backup, and select any listed recovery point from **Settings & privacy**. Changing the folder does not move or delete backups already stored in the previous location. Restoring validates the file, first preserves the current library, and requires one-time confirmation before restored launch targets can run. Logs are stored locally under `%LocalAppData%\NightLauncher\logs` and rotated to bounded files. Export an additional backup to an external drive before reinstalling Windows or deleting the application data folder.
 
 ## Security model
 
@@ -85,4 +85,4 @@ NightLauncher starts only the executable path explicitly selected by the user or
 
 ## Project status
 
-Version 1.2.0 adds local recovery backups, restore controls, bounded logs, a per-user installer, optional Authenticode signing, and an expanded Windows packaging pipeline. It is still a development release until signing is configured and compatibility/UI checks are completed on real Windows 10 and Windows 11 user sessions. See [ROADMAP.md](ROADMAP.md) for remaining release work. GitHub Actions is the source of truth for build, smoke-test, vulnerability-check, and packaging results.
+Version 1.2.1 adds selectable backup storage, a recovery-point picker, local recovery backups, guarded restore, bounded logs, a per-user installer, optional Authenticode signing, and an expanded Windows packaging pipeline. It is still a development release until signing is configured and compatibility/UI checks are completed on real Windows 10 and Windows 11 user sessions. See [ROADMAP.md](ROADMAP.md) for remaining release work. GitHub Actions is the source of truth for build, smoke-test, vulnerability-check, and packaging results.
