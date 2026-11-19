@@ -39,7 +39,7 @@ public sealed class GameLibraryService
             ValidateCollection(games);
             return games;
         }
-        catch (Exception exception) when (exception is JsonException or InvalidDataException or IOException or UnauthorizedAccessException)
+        catch (Exception exception) when (exception is JsonException or IOException or UnauthorizedAccessException)
         {
             var quarantinePath = Path.Combine(
                 Path.GetDirectoryName(LibraryPath)!,
