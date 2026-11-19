@@ -373,6 +373,35 @@ internal static class Program
             var limitedDiscovery = new GameDiscoveryService().DiscoverExecutables(discoveryRoot, maximumDepth: 0);
             Assert(limitedDiscovery.Count == 0, "folder discovery should respect the configured maximum depth");
 
+            var budgetRoot = Path.Combine(root, "discovery-budget");
+            Directory.CreateDirectory(budgetRoot);
+            var rootExecutable = Path.Combine(budgetRoot, "RootGame.exe");
+            File.WriteAllText(rootExecutable, "root game fixture");
+            for (var index = 0; index < 20; index++)
+            {
+                var child = Path.Combine(budgetRoot, $"Child-{index:D2}");
+                Directory.CreateDirectory(child);
+                File.WriteAllText(Path.Combine(child, $"ChildGame-{index:D2}.exe"), "child game fixture");
+            }
+
+            var budgetedDiscovery = new GameDiscoveryService().DiscoverExecutables(
+                budgetRoot, maximumDepth: 1, maximumResults: 500, maximumDirectoriesToVisit: 2);
+            Assert(budgetedDiscovery.Count >= 1 && budgetedDiscovery.Count <= 2 &&
+                   budgetedDiscovery.Any(item => string.Equals(item.ExecutablePath, rootExecutable, StringComparison.OrdinalIgnoreCase)),
+                "folder discovery should bound both queued and visited directories using the configured budget");
+
+            var invalidDirectoryBudgetRejected = false;
+            try
+            {
+                _ = new GameDiscoveryService().DiscoverExecutables(budgetRoot, maximumDirectoriesToVisit: 0);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                invalidDirectoryBudgetRejected = true;
+            }
+
+            Assert(invalidDirectoryBudgetRejected, "folder discovery should reject an invalid directory visit budget");
+
             var legacyStorage = Path.Combine(root, "legacy");
             Directory.CreateDirectory(legacyStorage);
             var legacyEntry = new

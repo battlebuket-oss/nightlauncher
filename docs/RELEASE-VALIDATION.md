@@ -7,7 +7,7 @@ This checklist separates CI-verifiable checks from tests that require a real int
 - [ ] CodeQL C# security analysis completes and findings are reviewed.
 
 - [ ] Windows x64 Release build succeeds.
-- [ ] Smoke tests pass (library persistence, Steam URI and Steam library discovery, backup/restore, retention, discovery limits, invalid inputs, favorite persistence/import/export, category editing/filtering, library sort modes, settings preference round-trips, and diagnostics export limits/content selection, library/settings/diagnostics temp-file preservation, and favorites-only/category/search filter combinations).
+- [ ] Smoke tests pass (library persistence, Steam URI and Steam library discovery, backup/restore, retention, discovery limits, invalid inputs, favorite persistence/import/export, category editing/filtering, library sort modes, settings preference round-trips, and diagnostics export limits/content selection, library/settings/diagnostics temp-file preservation, backup temp ownership, favorites-only/category/search filter combinations, and pending-directory discovery-budget enforcement).
 - [ ] WPF windows initialize and compiled XAML fields resolve on an STA thread.
 - [x] UI Automation opens the live WPF main window, sets search text, toggles Favorites-only, and verifies the visible game list.
 - [ ] NuGet vulnerability report is reviewed.

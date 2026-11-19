@@ -9,7 +9,7 @@
 - [x] Persist preferred library sort mode without overwriting backup-folder settings
 - [x] User-triggered diagnostics ZIP export limited to bounded app logs and a basic runtime summary
 - [x] Favorites-only filter combinable with category and text search
-- [x] Library, settings, and diagnostics writers use unique create-new temp files and preserve pre-existing neighboring files
+- [x] Library, settings, diagnostics, and backup writers use collision-safe temporary files and only clean up files created by the current operation
 - [x] Open validated game install folders from the details pane
 - [x] Keyboard shortcuts for search, clear, launch, and remove; explicit automation names for search and game list
 - [x] Refresh Steam game names/install paths during discovery while preserving compatibility with older library JSON
@@ -17,7 +17,7 @@
 - [x] Local Steam library discovery from libraryfolders and appmanifest metadata, with bounded parsing, global scan budgets, reparse-point and install-path validation, manual folder fallback, and install-path refresh
 - [x] JSON import/export with validation and imported-entry confirmation
 - [x] Backward-compatible loading of pre-1.1.0 library files
-- [x] Bounded discovery in a folder explicitly selected by the user
+- [x] Bounded discovery in a folder explicitly selected by the user, including a cap on pending directories as well as visited directories
 - [x] Run Steam and folder discovery on background tasks and disable overlapping scan actions while scanning
 - [x] Manual candidate selection before adding discovered executables; discovered entries require first-launch confirmation
 - [x] Automatic pre-change local backups with 20-copy retention

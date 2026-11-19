@@ -39,7 +39,8 @@ public sealed class GameDiscoveryService
     public IReadOnlyList<DiscoveredGameExecutable> DiscoverExecutables(
         string selectedRoot,
         int maximumDepth = 4,
-        int maximumResults = 500)
+        int maximumResults = 500,
+        int maximumDirectoriesToVisit = MaximumDirectoriesToVisit)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(selectedRoot);
         if (maximumDepth < 0 || maximumDepth > 8)
@@ -50,6 +51,12 @@ public sealed class GameDiscoveryService
         if (maximumResults < 1 || maximumResults > 2_000)
         {
             throw new ArgumentOutOfRangeException(nameof(maximumResults), "Result limit must be between 1 and 2000.");
+        }
+
+        if (maximumDirectoriesToVisit < 1 || maximumDirectoriesToVisit > MaximumDirectoriesToVisit)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maximumDirectoriesToVisit),
+                $"Directory visit limit must be between 1 and {MaximumDirectoriesToVisit}.");
         }
 
         var root = Path.GetFullPath(selectedRoot);
@@ -65,7 +72,7 @@ public sealed class GameDiscoveryService
 
         var visitedDirectories = 0;
         while (pending.Count > 0 &&
-               visitedDirectories < MaximumDirectoriesToVisit &&
+               visitedDirectories < maximumDirectoriesToVisit &&
                candidates.Count < maximumResults)
         {
             var (currentDirectory, depth) = pending.Pop();
@@ -113,6 +120,14 @@ public sealed class GameDiscoveryService
                 foreach (var childDirectory in Directory.EnumerateDirectories(
                              currentDirectory, "*", SearchOption.TopDirectoryOnly))
                 {
+                    // Bound pending work as well as completed visits. Without this check one
+                    // folder containing hundreds of thousands of child directories could grow
+                    // the stack far beyond the global scan budget before the next loop iteration.
+                    if (visitedDirectories + pending.Count >= maximumDirectoriesToVisit)
+                    {
+                        break;
+                    }
+
                     if (IgnoredDirectoryNames.Contains(Path.GetFileName(childDirectory)))
                     {
                         continue;
