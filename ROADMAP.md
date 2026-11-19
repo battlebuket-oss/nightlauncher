@@ -4,7 +4,7 @@
 - [x] Local game library and JSON persistence
 - [x] Add/edit/remove entries and search
 - [x] Direct executable launching and official Steam protocol hand-off
-- [x] Local Steam library discovery from libraryfolders and appmanifest metadata, with bounded parsing and install-path validation
+- [x] Local Steam library discovery from libraryfolders and appmanifest metadata, with bounded parsing, install-path validation, and manual folder fallback
 - [x] JSON import/export with validation and imported-entry confirmation
 - [x] Backward-compatible loading of pre-1.1.0 library files
 - [x] Bounded discovery in a folder explicitly selected by the user
