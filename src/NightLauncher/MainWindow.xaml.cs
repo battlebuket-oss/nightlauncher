@@ -15,6 +15,7 @@ public partial class MainWindow : Window
 {
     private readonly GameLibraryService _library = new();
     private readonly GameLibraryBackupService _backups;
+    private readonly GameDiscoveryService _discovery = new();
     private readonly GameLauncher _launcher = new();
     private readonly ObservableCollection<GameEntry> _games = [];
     private ICollectionView? _gamesView;
@@ -192,7 +193,7 @@ public partial class MainWindow : Window
         if (needsConfirmation)
         {
             var answer = MessageBox.Show(this,
-                $"This game entry came from an imported library. Confirm that you trust this executable and its arguments before running it:\n\nLaunch target: {selected.LaunchTargetDescription}\nArguments: {selected.LaunchArguments}\n\nContinue?",
+                $"This game entry was imported or discovered from a folder. Confirm that you trust this launch target before running it:\n\nLaunch target: {selected.LaunchTargetDescription}\nArguments: {selected.LaunchArguments}\n\nContinue?",
                 "Review imported launch target", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (answer != MessageBoxResult.Yes)
             {
@@ -292,6 +293,89 @@ public partial class MainWindow : Window
             MessageBox.Show(this, exception.Message, "Export failed",
                 MessageBoxButton.OK, MessageBoxImage.Error);
         }
+    }
+
+    private void DiscoverGames_Click(object sender, RoutedEventArgs e)
+    {
+        var folderDialog = new OpenFolderDialog
+        {
+            Title = "Choose a folder to scan for game executables",
+            Multiselect = false
+        };
+
+        if (folderDialog.ShowDialog(this) != true)
+        {
+            return;
+        }
+
+        IReadOnlyList<DiscoveredGameExecutable> candidates;
+        try
+        {
+            Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+            candidates = _discovery.DiscoverExecutables(folderDialog.FolderName);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            MessageBox.Show(this, $"NightLauncher could not scan that folder.\n\n{exception.Message}",
+                "Game discovery failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        finally
+        {
+            Mouse.OverrideCursor = null;
+        }
+
+        if (candidates.Count == 0)
+        {
+            MessageBox.Show(this,
+                "No executable candidates were found within the scan depth and result limits.",
+                "No games found", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var selection = new DiscoveredGamesWindow(candidates) { Owner = this };
+        if (selection.ShowDialog() != true || selection.SelectedExecutables.Count == 0)
+        {
+            return;
+        }
+
+        var additions = new List<GameEntry>();
+        foreach (var candidate in selection.SelectedExecutables)
+        {
+            if (_games.Any(existing =>
+                    string.Equals(existing.ExecutablePath, candidate.ExecutablePath, StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+
+            additions.Add(new GameEntry
+            {
+                Name = candidate.DisplayName,
+                LaunchMode = "Executable",
+                ExecutablePath = candidate.ExecutablePath,
+                WorkingDirectory = candidate.WorkingDirectory,
+                Category = "PC Game",
+                NeedsLaunchConfirmation = true
+            });
+        }
+
+        if (additions.Count == 0)
+        {
+            MessageBox.Show(this, "All selected executables are already in your library.",
+                "Nothing new to add", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        foreach (var game in additions)
+        {
+            _games.Add(game);
+        }
+
+        SaveLibrary();
+        RefreshLibraryView();
+        GamesList.SelectedItem = additions[^1];
+        GamesList.ScrollIntoView(additions[^1]);
+        SetStatus($"Discovered and added {additions.Count} game(s) · launch review required");
     }
 
     private void Settings_Click(object sender, RoutedEventArgs e)
