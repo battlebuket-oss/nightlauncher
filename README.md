@@ -9,6 +9,7 @@
 - Native Windows desktop UI (WPF, .NET 10).
 - Add and edit games using a directly selected executable.
 - Add a Steam game using its numeric Steam App ID.
+- Discover installed Steam games across the configured local Steam libraries by reading `libraryfolders.vdf` and `appmanifest_*.acf`; newly discovered entries require a one-time review and launch through the official Steam client.
 - Steam entries are handed to the official Steam client using its registered `steam://rungameid/<appid>` protocol.
 - Optional launch arguments for direct executable entries.
 - Search and browse a local game library.
@@ -57,7 +58,7 @@ The output is NightLauncher.exe in the publish folder. It does not require a sep
 
     dotnet run --project tests/NightLauncher.SmokeTests/NightLauncher.SmokeTests.csproj -c Release
 
-The Windows smoke suite covers library persistence, JSON import/export, legacy library compatibility, Steam URI generation, backup/restore/retention, custom backup preference persistence, malformed settings/library files, storage failures, selected-folder discovery limits, launch-target validation, and WPF recovery-list initialization. The Windows workflow also checks NuGet packages for known vulnerabilities before creating the installer and release artifacts.
+The Windows smoke suite covers library persistence, JSON import/export, legacy library compatibility, Steam library discovery (including secondary libraries, missing installs, path traversal, and malformed manifests), Steam URI generation, backup/restore/retention, custom backup preference persistence, malformed settings/library files, storage failures, selected-folder discovery limits, launch-target validation, and WPF recovery-list initialization. The Windows workflow also checks NuGet packages for known vulnerabilities before creating the installer and release artifacts.
 
 ## Add a direct executable game
 
@@ -81,7 +82,7 @@ You can choose another local or external folder in **Settings & privacy**. Night
 
 ## Security model
 
-NightLauncher starts only the executable path explicitly selected by the user or opens a Steam protocol URI containing a validated numeric App ID. Steam URI requests are handed to the registered Steam client, which is responsible for sign-in, ownership and game launch. NightLauncher does not read or modify Steam/Rockstar credentials, app manifests, game executables, or game processes. It does not elevate privileges automatically, accept remote commands, load plugins, run scripts, download DLLs, or bypass DRM.
+NightLauncher starts only the executable path explicitly selected by the user or opens a Steam protocol URI containing a validated numeric App ID. Steam URI requests are handed to the registered Steam client, which is responsible for sign-in, ownership and game launch. NightLauncher does not read or modify Steam/Rockstar credentials, modify app manifests, patch game executables, or inspect game processes. Its optional Steam discovery reads local `libraryfolders.vdf` and `appmanifest_*.acf` metadata only to identify installed App IDs, display names, and installation folders; it does not interpret that metadata as proof of ownership. Steam performs its normal sign-in, entitlement, and launch checks. It does not elevate privileges automatically, accept remote commands, load plugins, run scripts, download DLLs, or bypass DRM.
 
 ## Project status
 
