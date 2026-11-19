@@ -54,15 +54,17 @@ public sealed class GameLibraryBackupService
         var timestamp = DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss-fff", System.Globalization.CultureInfo.InvariantCulture);
         var destination = Path.Combine(BackupDirectory, $"NightLauncher-library-{timestamp}-{Guid.NewGuid():N}.json");
         var temporary = destination + ".tmp";
+        var temporaryCreated = false;
 
         try
         {
             File.Copy(_library.LibraryPath, temporary, overwrite: false);
+            temporaryCreated = true;
             File.Move(temporary, destination, overwrite: false);
         }
         finally
         {
-            if (File.Exists(temporary))
+            if (temporaryCreated && File.Exists(temporary))
             {
                 try
                 {
