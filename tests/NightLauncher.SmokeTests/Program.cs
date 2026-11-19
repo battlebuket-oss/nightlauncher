@@ -223,6 +223,8 @@ internal static class Program
             File.WriteAllText(Path.Combine(diagnosticsDirectory, "latest.log"), "latest error details");
             File.WriteAllText(Path.Combine(diagnosticsDirectory, "latest.1.log"), "older error details");
             File.WriteAllText(Path.Combine(diagnosticsDirectory, "private-settings.json"), "private token material that must not be exported");
+            File.WriteAllText(Path.Combine(diagnosticsDirectory, "library.json"), "local game library data");
+            File.WriteAllText(Path.Combine(diagnosticsDirectory, "backups.zip"), "private recovery data");
             var diagnosticsArchivePath = Path.Combine(root, "NightLauncher-Diagnostics.zip");
             var diagnosticsResult = new DiagnosticsService(diagnosticsDirectory).Export(diagnosticsArchivePath);
             Assert(diagnosticsResult.LogFilesIncluded == 2, "diagnostics export should include only recognized log files");
@@ -251,6 +253,17 @@ internal static class Program
             }
 
             Assert(oversizedDiagnosticsRejected, "diagnostics export should reject oversized log files");
+            var archiveInsideLogFolderRejected = false;
+            try
+            {
+                _ = new DiagnosticsService(diagnosticsDirectory).Export(Path.Combine(diagnosticsDirectory, "bundle.zip"));
+            }
+            catch (ArgumentException)
+            {
+                archiveInsideLogFolderRejected = true;
+            }
+
+            Assert(archiveInsideLogFolderRejected, "diagnostics archives should not be written inside the source log folder");
 
             var invalidBackupDirectoryRejected = false;
             try
