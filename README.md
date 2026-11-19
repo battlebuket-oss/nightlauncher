@@ -75,7 +75,7 @@ The Windows smoke suite covers library persistence, JSON import/export, legacy l
 4. Optionally add launch arguments. Leave them blank unless the game's official documentation requires them.
 5. Save, select the game in the library, and press **Launch**.
 
-Select any game and use **Add to favorites** in the details pane to pin it above non-favorites. Favorite status is stored with the local library and preserved by import/export and backups. Older library files without this field remain compatible.
+Select any game and use the **Category** field to assign a label such as Action, RPG, Racing, or Strategy. Use the category filter beside search to show one category, or combine it with the search box. Use **Add to favorites** in the details pane to pin favorite games above non-favorites. Categories and favorite status are stored locally and preserved by import/export and backups. Older library files remain compatible.
 
 ## Local data, backups and privacy
 
@@ -95,4 +95,4 @@ NightLauncher starts only the executable path explicitly selected by the user or
 
 ## Project status
 
-Version 1.4.0 adds persistent game favorites with favorite-first library ordering, alongside selectable backup storage, a recovery-point picker, local recovery backups, guarded restore, bounded logs, a per-user installer, optional Authenticode signing, and an expanded Windows packaging pipeline. It is still a development release until signing is configured and compatibility/UI checks are completed on real Windows 10 and Windows 11 user sessions. See [ROADMAP.md](ROADMAP.md) for remaining release work. GitHub Actions is the source of truth for build, smoke-test, vulnerability-check, and packaging results.
+Version 1.5.0 adds editable game categories and a category filter alongside persistent game favorites with favorite-first library ordering, selectable backup storage, a recovery-point picker, local recovery backups, guarded restore, bounded logs, a per-user installer, optional Authenticode signing, and an expanded Windows packaging pipeline. It is still a development release until signing is configured and compatibility/UI checks are completed on real Windows 10 and Windows 11 user sessions. See [ROADMAP.md](ROADMAP.md) for remaining release work. GitHub Actions is the source of truth for build, smoke-test, vulnerability-check, and packaging results.

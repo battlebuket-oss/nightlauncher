@@ -24,6 +24,7 @@ public partial class MainWindow : Window
     private readonly GameLauncher _launcher = new();
     private readonly ObservableCollection<GameEntry> _games = [];
     private ICollectionView? _gamesView;
+    private bool _isUpdatingCategoryFilter;
 
     public MainWindow()
     {
@@ -46,6 +47,7 @@ public partial class MainWindow : Window
         _gamesView.SortDescriptions.Add(new SortDescription(nameof(GameEntry.IsFavorite), ListSortDirection.Descending));
         _gamesView.SortDescriptions.Add(new SortDescription(nameof(GameEntry.Name), ListSortDirection.Ascending));
         _gamesView.Filter = MatchesSearch;
+        RefreshCategoryFilterChoices();
         LoadLibrary();
     }
 
@@ -85,12 +87,17 @@ public partial class MainWindow : Window
         }
 
         var query = SearchBox.Text.Trim();
-        return query.Length == 0 ||
+        var selectedCategory = (CategoryFilterCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+        var matchesCategory = string.IsNullOrWhiteSpace(selectedCategory) ||
+                              string.Equals(selectedCategory, "All categories", StringComparison.OrdinalIgnoreCase) ||
+                              string.Equals(game.Category, selectedCategory, StringComparison.OrdinalIgnoreCase);
+
+        return matchesCategory && (query.Length == 0 ||
                game.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                game.Category.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                game.LaunchTargetDescription.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                game.SteamAppId.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-               game.SteamInstallDirectory.Contains(query, StringComparison.OrdinalIgnoreCase);
+               game.SteamInstallDirectory.Contains(query, StringComparison.OrdinalIgnoreCase));
     }
 
     private static bool HasSameLaunchTarget(GameEntry first, GameEntry second)
@@ -106,18 +113,60 @@ public partial class MainWindow : Window
         return string.Equals(first.ExecutablePath, second.ExecutablePath, StringComparison.OrdinalIgnoreCase);
     }
 
+    private void RefreshCategoryFilterChoices()
+    {
+        var selectedCategory = (CategoryFilterCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "All categories";
+        _isUpdatingCategoryFilter = true;
+        try
+        {
+            CategoryFilterCombo.Items.Clear();
+            var allCategories = new ComboBoxItem { Content = "All categories" };
+            CategoryFilterCombo.Items.Add(allCategories);
+
+            foreach (var category in _games
+                         .Select(game => game.Category.Trim())
+                         .Where(category => category.Length > 0)
+                         .Distinct(StringComparer.OrdinalIgnoreCase)
+                         .OrderBy(category => category, StringComparer.OrdinalIgnoreCase))
+            {
+                CategoryFilterCombo.Items.Add(new ComboBoxItem { Content = category });
+            }
+
+            CategoryFilterCombo.SelectedItem = CategoryFilterCombo.Items
+                .OfType<ComboBoxItem>()
+                .FirstOrDefault(item => string.Equals(item.Content?.ToString(), selectedCategory, StringComparison.OrdinalIgnoreCase))
+                ?? allCategories;
+        }
+        finally
+        {
+            _isUpdatingCategoryFilter = false;
+        }
+    }
+
+    private void CategoryFilter_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!_isUpdatingCategoryFilter)
+        {
+            RefreshLibraryView();
+        }
+    }
+
     private void RefreshLibraryView()
     {
+        RefreshCategoryFilterChoices();
         _gamesView?.Refresh();
-        CountText.Text = $"{_games.Count} game{(_games.Count == 1 ? string.Empty : "s")}";
+        var visibleCount = _gamesView?.Cast<object>().Count() ?? 0;
+        CountText.Text = visibleCount == _games.Count
+            ? $"{_games.Count} game{(_games.Count == 1 ? string.Empty : "s")}"
+            : $"{visibleCount} of {_games.Count} games";
 
-        var hasVisibleGames = _gamesView?.Cast<object>().Any() == true;
+        var hasVisibleGames = visibleCount > 0;
         EmptyState.Visibility = hasVisibleGames ? Visibility.Collapsed : Visibility.Visible;
 
         if (_games.Count > 0 && !hasVisibleGames)
         {
             EmptyTitle.Text = "No matching games";
-            EmptyMessage.Text = "Try another search term or clear the search box.";
+            EmptyMessage.Text = "Try another search term or select All categories.";
         }
         else
         {

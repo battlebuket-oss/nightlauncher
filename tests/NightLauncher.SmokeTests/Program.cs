@@ -463,6 +463,13 @@ internal static class Program
             app.InitializeComponent();
             app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
+            var categoryEditWindow = new NightLauncher.Views.AddGameWindow(loaded[0]);
+            var editCategoryTextBox = categoryEditWindow.FindName("CategoryTextBox") as TextBox;
+            Assert(editCategoryTextBox?.Text == "Test", "edit dialog should preserve the existing game category");
+            var newGameDialog = new NightLauncher.Views.AddGameWindow();
+            var newCategoryTextBox = newGameDialog.FindName("CategoryTextBox") as TextBox;
+            Assert(newCategoryTextBox?.Text == "PC Game", "new games should default to the PC Game category");
+
             var mainWindow = new NightLauncher.MainWindow();
             Assert(mainWindow.Title == "NightLauncher", "main WPF window should initialize with the expected title");
             Assert(HasGeneratedField(typeof(NightLauncher.MainWindow), "SearchBox"),
@@ -486,6 +493,34 @@ internal static class Program
             Assert(gamesListControl is not null &&
                    AutomationProperties.GetName(gamesListControl) == "Games in your library",
                 "game list should expose an explicit automation name");
+            var categoryFilter = mainWindow.FindName("CategoryFilterCombo") as ComboBox;
+            Assert(categoryFilter is not null &&
+                   AutomationProperties.GetName(categoryFilter) == "Filter games by category",
+                "category filter should expose an explicit automation name");
+            var mainGamesField = typeof(NightLauncher.MainWindow).GetField("_games", BindingFlags.Instance | BindingFlags.NonPublic);
+            var mainGames = mainGamesField?.GetValue(mainWindow) as ObservableCollection<GameEntry>;
+            Assert(mainGames is not null, "main window should initialize its game collection");
+            mainGames!.Clear();
+            mainGames.Add(new GameEntry { Name = "Category filter action", LaunchMode = "Steam", SteamAppId = "700001", Category = "Action" });
+            mainGames.Add(new GameEntry { Name = "Category filter RPG", LaunchMode = "Steam", SteamAppId = "700002", Category = "RPG" });
+            var refreshLibraryView = typeof(NightLauncher.MainWindow).GetMethod("RefreshLibraryView", BindingFlags.Instance | BindingFlags.NonPublic);
+            refreshLibraryView?.Invoke(mainWindow, null);
+            var actionCategory = categoryFilter?.Items.OfType<ComboBoxItem>().FirstOrDefault(item =>
+                string.Equals(item.Content?.ToString(), "Action", StringComparison.OrdinalIgnoreCase));
+            Assert(actionCategory is not null, "category filter should populate categories from the library");
+            categoryFilter!.SelectedItem = actionCategory;
+            Assert(gamesListControl?.Items.Count == 1 &&
+                   ((GameEntry)gamesListControl.Items[0]).Category == "Action",
+                "category filter should show only games in the selected category");
+            searchControl!.Text = "RPG";
+            Assert(gamesListControl?.Items.Count == 0,
+                "text search should be combined with the selected category filter");
+            searchControl.Clear();
+            var allCategories = categoryFilter.Items.OfType<ComboBoxItem>().First(item =>
+                string.Equals(item.Content?.ToString(), "All categories", StringComparison.OrdinalIgnoreCase));
+            categoryFilter.SelectedItem = allCategories;
+            Assert(gamesListControl?.Items.Count == 2,
+                "selecting All categories should restore the full library view");
             var favoriteButton = mainWindow.FindName("ToggleFavoriteButton") as Button;
             Assert(favoriteButton is not null && !favoriteButton.IsEnabled,
                 "favorite toggle should initialize disabled until a game is selected");
