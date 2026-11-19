@@ -70,6 +70,45 @@ try
 
     Assert(invalidSteamIdRejected, "library validation must reject malformed Steam App IDs");
 
+    var backupDirectory = Path.Combine(root, "backups");
+    var backupService = new GameLibraryBackupService(service, backupDirectory, maximumBackups: 3);
+    var backupPath = backupService.CreateBackup();
+    Assert(File.Exists(backupPath), "backup creation should produce a file");
+    Assert(backupService.GetBackups().Count == 1, "backup enumeration should find the new backup");
+
+    service.Save([new GameEntry
+    {
+        Name = "Changed Library",
+        ExecutablePath = Path.Combine(root, "ChangedGame.exe"),
+        WorkingDirectory = root
+    }]);
+
+    backupService.RestoreBackup(backupPath);
+    var restored = service.Load();
+    Assert(restored.Count == 2, "restore should recover the backed-up game entries");
+    Assert(restored.Any(item => item.Name == "Example Steam Game"), "restore should recover the Steam entry");
+    Assert(restored.All(item => item.NeedsLaunchConfirmation), "restored entries should require a one-time launch review");
+    Assert(backupService.GetBackups().Count == 2, "restore should preserve the pre-restore library as a safety backup");
+
+    var outsideRestoreRejected = false;
+    try
+    {
+        backupService.RestoreBackup(exportPath);
+    }
+    catch (InvalidDataException)
+    {
+        outsideRestoreRejected = true;
+    }
+
+    Assert(outsideRestoreRejected, "restore should reject files outside the NightLauncher backup directory");
+
+    for (var index = 0; index < 5; index++)
+    {
+        backupService.CreateBackup();
+    }
+
+    Assert(backupService.GetBackups().Count <= 3, "backup retention should keep no more than the configured maximum");
+
     var legacyStorage = Path.Combine(root, "legacy");
     Directory.CreateDirectory(legacyStorage);
     var legacyEntry = new
