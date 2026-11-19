@@ -40,6 +40,7 @@ internal static class Program
                 Name = "Example Steam Game",
                 LaunchMode = "Steam",
                 SteamAppId = "271590",
+                SteamInstallDirectory = Path.Combine(root, "Steam", "steamapps", "common", "Example Steam Game"),
                 Category = "Steam"
             };
 
@@ -50,6 +51,10 @@ internal static class Program
             Assert(loaded[0].ExecutablePath == game.ExecutablePath, "library save/load should preserve the executable path");
             Assert(loaded[1].LaunchMode == "Steam", "library save/load should preserve the Steam launch mode");
             Assert(loaded[1].SteamAppId == "271590", "library save/load should preserve the Steam App ID");
+            Assert(loaded[1].SteamInstallDirectory == steamGame.SteamInstallDirectory,
+                "library save/load should preserve the discovered Steam install directory");
+            Assert(steamGame.Copy().SteamInstallDirectory == steamGame.SteamInstallDirectory,
+                "game entry copies should preserve the Steam install directory");
 
             var exportPath = Path.Combine(root, "backup.json");
             service.Export(exportPath, loaded);
@@ -58,6 +63,8 @@ internal static class Program
             Assert(imported.All(item => item.NeedsLaunchConfirmation), "imported entries should require a one-time review");
             Assert(imported[1].LaunchMode == "Steam" && imported[1].SteamAppId == "271590",
                 "JSON export/import should preserve Steam launch metadata");
+            Assert(imported[1].SteamInstallDirectory == steamGame.SteamInstallDirectory,
+                "JSON export/import should preserve the Steam install directory");
 
             var steamUri = GameLauncher.CreateSteamLaunchUri("271590");
             Assert(steamUri.Scheme == "steam", "Steam launch URI should use the official steam protocol");
@@ -390,6 +397,8 @@ internal static class Program
                 "main WPF window should expose the installed Steam library scan action");
             Assert(HasGeneratedField(typeof(NightLauncher.MainWindow), "FindGamesButton"),
                 "main WPF window should expose the selected-folder discovery action");
+            Assert(HasGeneratedField(typeof(NightLauncher.MainWindow), "OpenInstallFolderButton"),
+                "main WPF window should expose the open install folder action");
 
             settingsService.SaveBackupDirectory(backupDirectory);
             Assert(string.Equals(settingsService.LoadBackupDirectory(), Path.GetFullPath(backupDirectory), StringComparison.OrdinalIgnoreCase),
