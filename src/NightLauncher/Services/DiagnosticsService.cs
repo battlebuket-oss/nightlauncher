@@ -61,71 +61,71 @@ public sealed class DiagnosticsService
                 temporaryCreated = true;
                 using (var archive = new ZipArchive(temporaryStream, ZipArchiveMode.Create, leaveOpen: true))
                 {
-                foreach (var fileName in AllowedLogNames)
-                {
-                    var sourcePath = Path.Combine(LogDirectory, fileName);
-                    if (!File.Exists(sourcePath))
+                    foreach (var fileName in AllowedLogNames)
                     {
-                        continue;
-                    }
-
-                    var attributes = File.GetAttributes(sourcePath);
-                    if ((attributes & FileAttributes.ReparsePoint) != 0)
-                    {
-                        continue;
-                    }
-
-                    using var input = new FileStream(
-                        sourcePath,
-                        FileMode.Open,
-                        FileAccess.Read,
-                        FileShare.ReadWrite | FileShare.Delete);
-
-                    var bytesToCopy = input.Length;
-                    if (bytesToCopy > MaximumLogFileBytes)
-                    {
-                        throw new InvalidDataException($"The log file {fileName} exceeds the 2 MB export limit.");
-                    }
-
-                    totalBytes = checked(totalBytes + bytesToCopy);
-                    if (totalBytes > MaximumTotalLogBytes)
-                    {
-                        throw new InvalidDataException("The combined log files exceed the 8 MB export limit.");
-                    }
-
-                    var entry = archive.CreateEntry(fileName, CompressionLevel.Optimal);
-                    using (var output = entry.Open())
-                    {
-                        var buffer = new byte[81920];
-                        var remaining = bytesToCopy;
-                        while (remaining > 0)
+                        var sourcePath = Path.Combine(LogDirectory, fileName);
+                        if (!File.Exists(sourcePath))
                         {
-                            var read = input.Read(buffer, 0, (int)Math.Min(buffer.Length, remaining));
-                            if (read == 0)
-                            {
-                                throw new EndOfStreamException($"The log file {fileName} changed while it was being exported.");
-                            }
-
-                            output.Write(buffer, 0, read);
-                            remaining -= read;
+                            continue;
                         }
+
+                        var attributes = File.GetAttributes(sourcePath);
+                        if ((attributes & FileAttributes.ReparsePoint) != 0)
+                        {
+                            continue;
+                        }
+
+                        using var input = new FileStream(
+                            sourcePath,
+                            FileMode.Open,
+                            FileAccess.Read,
+                            FileShare.ReadWrite | FileShare.Delete);
+
+                        var bytesToCopy = input.Length;
+                        if (bytesToCopy > MaximumLogFileBytes)
+                        {
+                            throw new InvalidDataException($"The log file {fileName} exceeds the 2 MB export limit.");
+                        }
+
+                        totalBytes = checked(totalBytes + bytesToCopy);
+                        if (totalBytes > MaximumTotalLogBytes)
+                        {
+                            throw new InvalidDataException("The combined log files exceed the 8 MB export limit.");
+                        }
+
+                        var entry = archive.CreateEntry(fileName, CompressionLevel.Optimal);
+                        using (var output = entry.Open())
+                        {
+                            var buffer = new byte[81920];
+                            var remaining = bytesToCopy;
+                            while (remaining > 0)
+                            {
+                                var read = input.Read(buffer, 0, (int)Math.Min(buffer.Length, remaining));
+                                if (read == 0)
+                                {
+                                    throw new EndOfStreamException($"The log file {fileName} changed while it was being exported.");
+                                }
+
+                                output.Write(buffer, 0, read);
+                                remaining -= read;
+                            }
+                        }
+
+                        includedFiles.Add(fileName);
                     }
 
-                    includedFiles.Add(fileName);
-                }
-
-                var summaryEntry = archive.CreateEntry("diagnostics-summary.txt", CompressionLevel.Optimal);
-                using var writer = new StreamWriter(summaryEntry.Open(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-                writer.WriteLine("NightLauncher diagnostics summary");
-                writer.WriteLine($"NightLauncher version: {typeof(DiagnosticsService).Assembly.GetName().Version?.ToString() ?? "unknown"}");
-                writer.WriteLine($"Operating system: {Environment.OSVersion.VersionString}");
-                writer.WriteLine($"Runtime: {RuntimeInformation.FrameworkDescription}");
-                writer.WriteLine($"Generated UTC: {DateTimeOffset.UtcNow:O}");
-                writer.WriteLine($"Log files included: {includedFiles.Count}");
-                foreach (var name in includedFiles)
-                {
-                    writer.WriteLine($"- {name}");
-                }
+                    var summaryEntry = archive.CreateEntry("diagnostics-summary.txt", CompressionLevel.Optimal);
+                    using var writer = new StreamWriter(summaryEntry.Open(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+                    writer.WriteLine("NightLauncher diagnostics summary");
+                    writer.WriteLine($"NightLauncher version: {typeof(DiagnosticsService).Assembly.GetName().Version?.ToString() ?? "unknown"}");
+                    writer.WriteLine($"Operating system: {Environment.OSVersion.VersionString}");
+                    writer.WriteLine($"Runtime: {RuntimeInformation.FrameworkDescription}");
+                    writer.WriteLine($"Generated UTC: {DateTimeOffset.UtcNow:O}");
+                    writer.WriteLine($"Log files included: {includedFiles.Count}");
+                    foreach (var name in includedFiles)
+                    {
+                        writer.WriteLine($"- {name}");
+                    }
                 }
             }
 
