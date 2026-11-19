@@ -554,6 +554,9 @@ internal static class Program
                 "main WPF window should expose its launch control in the generated XAML fields");
             Assert(HasGeneratedField(typeof(NightLauncher.MainWindow), "ScanSteamButton"),
                 "main WPF window should expose the installed Steam library scan action");
+            Assert(HasGeneratedField(typeof(NightLauncher.Views.SettingsWindow), "OpenLogsFolderButton") &&
+                   HasGeneratedField(typeof(NightLauncher.Views.SettingsWindow), "ExportDiagnosticsButton"),
+                "settings window should generate accessible log-folder and diagnostics-export controls");
             Assert(HasGeneratedField(typeof(NightLauncher.MainWindow), "FindGamesButton"),
                 "main WPF window should expose the selected-folder discovery action");
             Assert(HasGeneratedField(typeof(NightLauncher.MainWindow), "OpenInstallFolderButton"),
