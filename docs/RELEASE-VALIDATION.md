@@ -5,7 +5,7 @@ This checklist separates CI-verifiable checks from tests that require a real int
 ## GitHub Actions checks
 
 - [ ] Windows x64 Release build succeeds.
-- [ ] Smoke tests pass (library persistence, Steam URI, backup/restore, retention, discovery limits, invalid inputs).
+- [ ] Smoke tests pass (library persistence, Steam URI and Steam library discovery, backup/restore, retention, discovery limits, invalid inputs).
 - [ ] WPF windows initialize and compiled XAML fields resolve on an STA thread.
 - [ ] NuGet vulnerability report is reviewed.
 - [ ] Self-contained EXE publishes.
@@ -20,6 +20,7 @@ This checklist separates CI-verifiable checks from tests that require a real int
 - [ ] Launch from Start Menu shortcut and optional desktop shortcut.
 - [ ] Add, edit, remove, search, import, and export game entries.
 - [ ] Add a Steam App ID and confirm the request opens the official Steam client.
+- [ ] Scan installed Steam libraries and verify primary/secondary game entries are added without changing manifests or reading credentials.
 - [ ] Scan a user-selected folder, select candidate executables, and verify no file is launched during discovery.
 - [ ] Confirm discovered/imported entries require a one-time trust review before launching.
 - [ ] Select a custom backup folder and restart the app to confirm the preference persists.
