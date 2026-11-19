@@ -222,7 +222,7 @@ internal static class Program
             Directory.CreateDirectory(diagnosticsDirectory);
             File.WriteAllText(Path.Combine(diagnosticsDirectory, "latest.log"), "latest error details");
             File.WriteAllText(Path.Combine(diagnosticsDirectory, "latest.1.log"), "older error details");
-            File.WriteAllText(Path.Combine(diagnosticsDirectory, "private-settings.json"), "{ \\"token\\": \\"must-not-be-exported\\" }");
+            File.WriteAllText(Path.Combine(diagnosticsDirectory, "private-settings.json"), "private token material that must not be exported");
             var diagnosticsArchivePath = Path.Combine(root, "NightLauncher-Diagnostics.zip");
             var diagnosticsResult = new DiagnosticsService(diagnosticsDirectory).Export(diagnosticsArchivePath);
             Assert(diagnosticsResult.LogFilesIncluded == 2, "diagnostics export should include only recognized log files");
