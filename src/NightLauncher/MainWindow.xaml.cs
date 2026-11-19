@@ -3,6 +3,7 @@ using NightLauncher.Models;
 using NightLauncher.Services;
 using NightLauncher.Views;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
