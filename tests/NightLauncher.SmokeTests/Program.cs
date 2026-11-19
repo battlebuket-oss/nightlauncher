@@ -254,6 +254,9 @@ internal static class Program
             Assert(HasGeneratedField(typeof(NightLauncher.MainWindow), "LaunchButton"),
                 "main WPF window should expose its launch control in the generated XAML fields");
 
+            settingsService.SaveBackupDirectory(backupDirectory);
+            Assert(string.Equals(settingsService.LoadBackupDirectory(), Path.GetFullPath(backupDirectory), StringComparison.OrdinalIgnoreCase),
+                "settings should persist the active backup folder");
             var settingsWindow = new NightLauncher.Views.SettingsWindow(
                 service.LibraryPath,
                 backupService,
@@ -267,6 +270,11 @@ internal static class Program
                 "settings WPF window should expose the selectable recovery point list");
             Assert(HasGeneratedField(typeof(NightLauncher.Views.SettingsWindow), "SelectBackupFolderButton"),
                 "settings WPF window should expose the backup folder selector");
+            var recoveryList = settingsWindow.FindName("BackupListBox") as System.Windows.Controls.ListBox;
+            Assert(recoveryList is not null && recoveryList.Items.Count == backupService.GetBackups().Count,
+                "settings WPF window should populate the selectable recovery-point list");
+            Assert(recoveryList?.SelectedIndex == 0,
+                "settings WPF window should select the newest recovery point by default");
             Assert(string.Equals(settingsWindow.SelectedBackupDirectory, backupDirectory, StringComparison.OrdinalIgnoreCase),
                 "settings window should display the active backup directory");
 
