@@ -30,15 +30,24 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         string? backupDirectory = null;
+        var preferredSortMode = "Name";
         try
         {
             backupDirectory = _settings.LoadBackupDirectory();
+            preferredSortMode = _settings.LoadPreferredSortMode();
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidDataException or System.Text.Json.JsonException)
         {
             MessageBox.Show(this,
                 $"NightLauncher could not read its settings and will use the default backup folder for this session.\\n\\n{exception.Message}",
                 "Settings file needs attention", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+
+        var preferredSortItem = SortModeCombo.Items.OfType<ComboBoxItem>().FirstOrDefault(item =>
+            string.Equals(item.Tag?.ToString(), preferredSortMode, StringComparison.OrdinalIgnoreCase));
+        if (preferredSortItem is not null)
+        {
+            SortModeCombo.SelectedItem = preferredSortItem;
         }
 
         _backups = new GameLibraryBackupService(_library, backupDirectory);
@@ -143,7 +152,22 @@ public partial class MainWindow : Window
 
     private void SortMode_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (_gamesView is null)
+        {
+            return;
+        }
+
         ApplyLibrarySort();
+        var selectedMode = (SortModeCombo.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "Name";
+        try
+        {
+            _settings.SavePreferredSortMode(selectedMode);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidDataException or
+                                           System.Text.Json.JsonException or ArgumentException)
+        {
+            SetStatus($"Sort order changed for this session, but the preference could not be saved: {exception.Message}");
+        }
     }
 
     private void RefreshCategoryFilterChoices()
