@@ -54,6 +54,11 @@ public sealed class DiagnosticsService
         long totalBytes = 0;
         try
         {
+            if (File.Exists(temporaryPath))
+            {
+                File.Delete(temporaryPath);
+            }
+
             using (var archive = ZipFile.Open(temporaryPath, ZipArchiveMode.Create))
             {
                 foreach (var fileName in AllowedLogNames)
@@ -76,12 +81,13 @@ public sealed class DiagnosticsService
                         FileAccess.Read,
                         FileShare.ReadWrite | FileShare.Delete);
 
-                    if (input.Length > MaximumLogFileBytes)
+                    var bytesToCopy = input.Length;
+                    if (bytesToCopy > MaximumLogFileBytes)
                     {
                         throw new InvalidDataException($"The log file {fileName} exceeds the 2 MB export limit.");
                     }
 
-                    totalBytes = checked(totalBytes + input.Length);
+                    totalBytes = checked(totalBytes + bytesToCopy);
                     if (totalBytes > MaximumTotalLogBytes)
                     {
                         throw new InvalidDataException("The combined log files exceed the 8 MB export limit.");
@@ -90,7 +96,19 @@ public sealed class DiagnosticsService
                     var entry = archive.CreateEntry(fileName, CompressionLevel.Optimal);
                     using (var output = entry.Open())
                     {
-                        input.CopyTo(output);
+                        var buffer = new byte[81920];
+                        var remaining = bytesToCopy;
+                        while (remaining > 0)
+                        {
+                            var read = input.Read(buffer, 0, (int)Math.Min(buffer.Length, remaining));
+                            if (read == 0)
+                            {
+                                throw new EndOfStreamException($"The log file {fileName} changed while it was being exported.");
+                            }
+
+                            output.Write(buffer, 0, read);
+                            remaining -= read;
+                        }
                     }
 
                     includedFiles.Add(fileName);
