@@ -243,7 +243,7 @@ jobs:
           path: |
             artifacts/publish/NightLauncher.exe
             artifacts/NightLauncher-win-x64.zip
-            artifacts/NightLauncher-Setup-${{ env.NIGHTLAUNCHER_VERSION }}.exe
+            artifacts/NightLauncher-Setup-*.exe
           if-no-files-found: error
           retention-days: 30
 
