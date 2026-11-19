@@ -311,7 +311,7 @@ public partial class MainWindow : Window
         IReadOnlyList<DiscoveredGameExecutable> candidates;
         try
         {
-            Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+            System.Windows.Input.Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
             candidates = _discovery.DiscoverExecutables(folderDialog.FolderName);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException)
@@ -322,7 +322,7 @@ public partial class MainWindow : Window
         }
         finally
         {
-            Mouse.OverrideCursor = null;
+            System.Windows.Input.Mouse.OverrideCursor = null;
         }
 
         if (candidates.Count == 0)
