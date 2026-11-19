@@ -14,6 +14,7 @@
 - [x] Select any available recovery point in Settings for restore
 - [x] Local log rotation
 - [x] Per-user Windows installer and uninstaller definition
+- [x] Windows CI installs and uninstalls the generated setup EXE, verifies the Start Menu shortcut, and checks that library/settings/backup data survives
 - [x] CI packaging for EXE, portable ZIP, and installer
 - [x] Optional Authenticode signing support in CI (certificate configuration remains external)
 - [x] Expanded smoke tests for Steam URI validation, legacy data, backup/restore, retention, discovery limits, and invalid restore paths
