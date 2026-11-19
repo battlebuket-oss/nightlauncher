@@ -119,6 +119,79 @@ internal static class Program
 
             Assert(backupService.GetBackups().Count <= 3, "backup retention should keep no more than the configured maximum");
 
+            var settingsDirectory = Path.Combine(root, "configuration");
+            var settingsPath = Path.Combine(settingsDirectory, "settings.json");
+            var settingsService = new NightLauncherSettingsService(settingsPath);
+            Assert(settingsService.LoadBackupDirectory() is null, "a new settings file should use the default backup directory");
+            var customBackupDirectory = Path.Combine(root, "external-backups");
+            settingsService.SaveBackupDirectory(customBackupDirectory);
+            var reloadedSettings = new NightLauncherSettingsService(settingsPath);
+            Assert(string.Equals(reloadedSettings.LoadBackupDirectory(), Path.GetFullPath(customBackupDirectory), StringComparison.OrdinalIgnoreCase),
+                "settings should persist and reload the custom backup directory");
+
+            var invalidBackupDirectoryRejected = false;
+            try
+            {
+                settingsService.SaveBackupDirectory("relative\\backup");
+            }
+            catch (ArgumentException)
+            {
+                invalidBackupDirectoryRejected = true;
+            }
+
+            Assert(invalidBackupDirectoryRejected, "settings should reject relative backup paths");
+
+            var malformedSettingsPath = Path.Combine(settingsDirectory, "malformed-settings.json");
+            File.WriteAllText(malformedSettingsPath, "{ invalid json");
+            var malformedSettingsRejected = false;
+            try
+            {
+                _ = new NightLauncherSettingsService(malformedSettingsPath).LoadBackupDirectory();
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                malformedSettingsRejected = true;
+            }
+
+            Assert(malformedSettingsRejected, "settings service should reject malformed JSON");
+
+            var corruptLibraryDirectory = Path.Combine(root, "corrupt-library");
+            Directory.CreateDirectory(corruptLibraryDirectory);
+            var corruptLibraryPath = Path.Combine(corruptLibraryDirectory, "library.json");
+            File.WriteAllText(corruptLibraryPath, "{ malformed library");
+            var corruptLibraryRejected = false;
+            try
+            {
+                _ = new GameLibraryService(corruptLibraryDirectory).Load();
+            }
+            catch (InvalidDataException)
+            {
+                corruptLibraryRejected = true;
+            }
+
+            Assert(corruptLibraryRejected, "library loader should reject malformed JSON");
+            Assert(!File.Exists(corruptLibraryPath) &&
+                   Directory.EnumerateFiles(corruptLibraryDirectory, "library.corrupt-*.json").Any(),
+                "library loader should preserve malformed data in a quarantine file");
+
+            var blockedStoragePath = Path.Combine(root, "storage-is-a-file");
+            File.WriteAllText(blockedStoragePath, "not a directory");
+            var storageFailureHandled = false;
+            try
+            {
+                new GameLibraryService(blockedStoragePath).Save(Array.Empty<GameEntry>());
+            }
+            catch (IOException)
+            {
+                storageFailureHandled = true;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                storageFailureHandled = true;
+            }
+
+            Assert(storageFailureHandled, "library save should surface a predictable failure when its storage directory is blocked by a file");
+
             var discoveryRoot = Path.Combine(root, "discovery");
             var gameFolder = Path.Combine(discoveryRoot, "Games", "ExampleTitle");
             var redistFolder = Path.Combine(discoveryRoot, "Games", "Redist");
@@ -181,12 +254,21 @@ internal static class Program
             Assert(HasGeneratedField(typeof(NightLauncher.MainWindow), "LaunchButton"),
                 "main WPF window should expose its launch control in the generated XAML fields");
 
-            var settingsWindow = new NightLauncher.Views.SettingsWindow(service.LibraryPath, backupService);
+            var settingsWindow = new NightLauncher.Views.SettingsWindow(
+                service.LibraryPath,
+                backupService,
+                settingsService);
             Assert(settingsWindow.Title == "Settings", "settings WPF window should initialize");
             Assert(HasGeneratedField(typeof(NightLauncher.Views.SettingsWindow), "RestoreBackupButton"),
-                "settings WPF window should expose the backup restore control");
+                "settings WPF window should expose the selected-backup restore control");
             Assert(HasGeneratedField(typeof(NightLauncher.Views.SettingsWindow), "BackupStatusText"),
                 "settings WPF window should expose backup status text");
+            Assert(HasGeneratedField(typeof(NightLauncher.Views.SettingsWindow), "BackupListBox"),
+                "settings WPF window should expose the selectable recovery point list");
+            Assert(HasGeneratedField(typeof(NightLauncher.Views.SettingsWindow), "SelectBackupFolderButton"),
+                "settings WPF window should expose the backup folder selector");
+            Assert(string.Equals(settingsWindow.SelectedBackupDirectory, backupDirectory, StringComparison.OrdinalIgnoreCase),
+                "settings window should display the active backup directory");
 
             app.Shutdown();
             Console.WriteLine("All NightLauncher smoke and WPF initialization tests passed.");
