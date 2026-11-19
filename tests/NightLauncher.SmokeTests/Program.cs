@@ -34,7 +34,8 @@ internal static class Program
                 Name = "Example Game",
                 ExecutablePath = Path.Combine(root, "ExampleGame.exe"),
                 WorkingDirectory = root,
-                Category = "Test"
+                Category = "Test",
+                IsFavorite = true
             };
 
             var steamGame = new GameEntry
@@ -51,6 +52,9 @@ internal static class Program
             Assert(loaded.Count == 2, "library save/load should preserve both executable and Steam entries");
             Assert(loaded[0].Name == game.Name, "library save/load should preserve the game name");
             Assert(loaded[0].ExecutablePath == game.ExecutablePath, "library save/load should preserve the executable path");
+            Assert(loaded[0].IsFavorite, "library save/load should preserve the favorite flag");
+            Assert(loaded[0].FavoriteIndicator == "★", "favorite entries should expose the star indicator for the library view");
+            Assert(loaded[0].Copy().IsFavorite, "game entry copies should preserve the favorite flag");
             Assert(loaded[1].LaunchMode == "Steam", "library save/load should preserve the Steam launch mode");
             Assert(loaded[1].SteamAppId == "271590", "library save/load should preserve the Steam App ID");
             Assert(loaded[1].SteamInstallDirectory == steamGame.SteamInstallDirectory,
@@ -63,6 +67,7 @@ internal static class Program
             var imported = service.Import(exportPath);
             Assert(imported.Count == 2, "JSON export/import should preserve both launch modes");
             Assert(imported.All(item => item.NeedsLaunchConfirmation), "imported entries should require a one-time review");
+            Assert(imported[0].IsFavorite, "JSON export/import should preserve favorite flags");
             Assert(imported[1].LaunchMode == "Steam" && imported[1].SteamAppId == "271590",
                 "JSON export/import should preserve Steam launch metadata");
             Assert(imported[1].SteamInstallDirectory == steamGame.SteamInstallDirectory,
@@ -261,6 +266,8 @@ internal static class Program
 
             Assert(legacyLoaded[0].SteamInstallDirectory == string.Empty,
                 "legacy executable entries should default to an empty Steam install directory");
+            Assert(!legacyLoaded[0].IsFavorite,
+                "legacy libraries without a favorite field should default to non-favorite entries");
 
             var legacySteamStorage = Path.Combine(root, "legacy-steam");
             Directory.CreateDirectory(legacySteamStorage);
@@ -454,6 +461,12 @@ internal static class Program
             Assert(gamesListControl is not null &&
                    AutomationProperties.GetName(gamesListControl) == "Games in your library",
                 "game list should expose an explicit automation name");
+            var favoriteButton = mainWindow.FindName("ToggleFavoriteButton") as Button;
+            Assert(favoriteButton is not null && !favoriteButton.IsEnabled,
+                "favorite toggle should initialize disabled until a game is selected");
+            Assert(favoriteButton is not null &&
+                   AutomationProperties.GetName(favoriteButton) == "Toggle favorite status for selected game",
+                "favorite toggle should expose an explicit automation name");
 
             settingsService.SaveBackupDirectory(backupDirectory);
             Assert(string.Equals(settingsService.LoadBackupDirectory(), Path.GetFullPath(backupDirectory), StringComparison.OrdinalIgnoreCase),
