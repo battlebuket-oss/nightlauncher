@@ -76,7 +76,8 @@
                         <TextBlock Text="Open the local log folder or export a ZIP containing only NightLauncher log files and a basic app/runtime summary."
                                    TextWrapping="Wrap" Foreground="#CBD5E1" Margin="0,7,0,10"/>
                         <WrapPanel>
-                            <Button Content="Open logs folder" Margin="0,0,8,8" Click="OpenLogsFolder_Click"/>
+                            <Button x:Name="OpenLogsFolderButton" Content="Open logs folder" Margin="0,0,8,8"
+                                    AutomationProperties.Name="Open NightLauncher logs folder" Click="OpenLogsFolder_Click"/>
                             <Button x:Name="ExportDiagnosticsButton" Content="Export diagnostics ZIP" Margin="0,0,8,8"
                                     AutomationProperties.Name="Export NightLauncher diagnostics ZIP" Click="ExportDiagnostics_Click"/>
                         </WrapPanel>
