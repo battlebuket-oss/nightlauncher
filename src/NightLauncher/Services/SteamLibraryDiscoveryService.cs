@@ -289,7 +289,14 @@ public sealed class SteamLibraryDiscoveryService
                 return null;
             }
 
-            var text = File.ReadAllText(path, Encoding.UTF8);
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            if (stream.Length != info.Length || stream.Length > MaximumVdfBytes)
+            {
+                return null;
+            }
+
+            using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+            var text = reader.ReadToEnd();
             return new VdfParser(text).Parse();
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or
