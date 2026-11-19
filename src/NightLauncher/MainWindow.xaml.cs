@@ -166,7 +166,7 @@ public partial class MainWindow : Window
         if (needsConfirmation)
         {
             var answer = MessageBox.Show(this,
-                $"This game entry came from an imported library. Confirm that you trust this executable before running it:\n\n{selected.ExecutablePath}\n\nContinue?",
+                $"This game entry came from an imported library. Confirm that you trust this executable and its arguments before running it:\n\nExecutable: {selected.ExecutablePath}\nArguments: {selected.LaunchArguments}\n\nContinue?",
                 "Review imported executable", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (answer != MessageBoxResult.Yes)
             {
@@ -231,7 +231,7 @@ public partial class MainWindow : Window
             MessageBox.Show(this, $"Imported {added} game(s). Existing executable paths were skipped.",
                 "Import complete", MessageBoxButton.OK, MessageBoxImage.Information);
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or InvalidDataException)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
         {
             MessageBox.Show(this, exception.Message, "Import failed",
                 MessageBoxButton.OK, MessageBoxImage.Error);
