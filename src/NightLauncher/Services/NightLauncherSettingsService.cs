@@ -78,7 +78,7 @@ public sealed class NightLauncherSettingsService
         {
             using (var stream = new FileStream(temporary, FileMode.Create, FileAccess.Write, FileShare.None))
             {
-                JsonSerializer.Serialize(stream, new SettingsDocument(normalized), SerializerOptions);
+                JsonSerializer.Serialize(stream, new SettingsDocument { BackupDirectory = normalized }, SerializerOptions);
                 stream.Flush(flushToDisk: true);
             }
 
