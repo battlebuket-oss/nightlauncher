@@ -53,11 +53,14 @@ public sealed class DiagnosticsService
         var temporaryPath = archivePath + $".{Guid.NewGuid():N}.tmp";
         var includedFiles = new List<string>();
         long totalBytes = 0;
+        var temporaryCreated = false;
         try
         {
             using (var temporaryStream = new FileStream(temporaryPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None))
-            using (var archive = new ZipArchive(temporaryStream, ZipArchiveMode.Create))
             {
+                temporaryCreated = true;
+                using (var archive = new ZipArchive(temporaryStream, ZipArchiveMode.Create, leaveOpen: true))
+                {
                 foreach (var fileName in AllowedLogNames)
                 {
                     var sourcePath = Path.Combine(LogDirectory, fileName);
@@ -123,6 +126,7 @@ public sealed class DiagnosticsService
                 {
                     writer.WriteLine($"- {name}");
                 }
+                }
             }
 
             File.Move(temporaryPath, archivePath, overwrite: true);
@@ -130,7 +134,7 @@ public sealed class DiagnosticsService
         }
         finally
         {
-            if (File.Exists(temporaryPath))
+            if (temporaryCreated && File.Exists(temporaryPath))
             {
                 try
                 {
