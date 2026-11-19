@@ -697,15 +697,17 @@ internal static class Program
             var liveSearch = liveWindow.FindFirst(TreeScope.Descendants,
                 new PropertyCondition(AutomationElement.NameProperty,
                     "Search games by name, category, Steam App ID, or install location"));
-            Assert(liveSearch is not null && liveSearch.TryGetCurrentPattern(ValuePattern.Pattern, out var liveSearchPattern),
-                "UI Automation should find the live search field and its Value pattern");
+            Assert(liveSearch is not null, "UI Automation should find the live search field");
+            Assert(liveSearch!.TryGetCurrentPattern(ValuePattern.Pattern, out var liveSearchPattern),
+                "UI Automation should find the live search field's Value pattern");
             ((ValuePattern)liveSearchPattern).SetValue("Zulu");
             mainWindow.Dispatcher.Invoke(DispatcherPriority.ApplicationIdle, new Action(() => { }));
 
             var liveFavorites = liveWindow.FindFirst(TreeScope.Descendants,
                 new PropertyCondition(AutomationElement.NameProperty, "Show favorites only"));
-            Assert(liveFavorites is not null && liveFavorites.TryGetCurrentPattern(TogglePattern.Pattern, out var liveTogglePattern),
-                "UI Automation should find the live favorites-only checkbox and its Toggle pattern");
+            Assert(liveFavorites is not null, "UI Automation should find the live favorites-only checkbox");
+            Assert(liveFavorites!.TryGetCurrentPattern(TogglePattern.Pattern, out var liveTogglePattern),
+                "UI Automation should find the live favorites-only checkbox's Toggle pattern");
             ((TogglePattern)liveTogglePattern).Toggle();
             mainWindow.Dispatcher.Invoke(DispatcherPriority.ApplicationIdle, new Action(() => { }));
             Assert(((TogglePattern)liveTogglePattern).Current.ToggleState == ToggleState.On,
@@ -714,7 +716,7 @@ internal static class Program
             var liveGamesList = liveWindow.FindFirst(TreeScope.Descendants,
                 new PropertyCondition(AutomationElement.NameProperty, "Games in your library"));
             Assert(liveGamesList is not null, "UI Automation should find the live games list");
-            var visibleLiveItems = liveGamesList.FindAll(TreeScope.Descendants,
+            var visibleLiveItems = liveGamesList!.FindAll(TreeScope.Descendants,
                 new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.ListItem));
             Assert(visibleLiveItems.Count == 1,
                 "the live window should show exactly one game after UI Automation searches Zulu and enables favorites-only");
