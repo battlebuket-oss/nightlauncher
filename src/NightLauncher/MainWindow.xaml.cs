@@ -14,7 +14,8 @@ namespace NightLauncher;
 public partial class MainWindow : Window
 {
     private readonly GameLibraryService _library = new();
-    private readonly GameLibraryBackupService _backups;
+    private GameLibraryBackupService _backups;
+    private readonly NightLauncherSettingsService _settings = new();
     private readonly GameDiscoveryService _discovery = new();
     private readonly GameLauncher _launcher = new();
     private readonly ObservableCollection<GameEntry> _games = [];
@@ -23,7 +24,19 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        _backups = new GameLibraryBackupService(_library);
+        string? backupDirectory = null;
+        try
+        {
+            backupDirectory = _settings.LoadBackupDirectory();
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidDataException or System.Text.Json.JsonException)
+        {
+            MessageBox.Show(this,
+                $"NightLauncher could not read its settings and will use the default backup folder for this session.\\n\\n{exception.Message}",
+                "Settings file needs attention", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+
+        _backups = new GameLibraryBackupService(_library, backupDirectory);
         GamesList.ItemsSource = _games;
         _gamesView = CollectionViewSource.GetDefaultView(_games);
         _gamesView.Filter = MatchesSearch;
@@ -380,8 +393,15 @@ public partial class MainWindow : Window
 
     private void Settings_Click(object sender, RoutedEventArgs e)
     {
-        var settings = new SettingsWindow(_library.LibraryPath, _backups) { Owner = this };
+        var settings = new SettingsWindow(_library.LibraryPath, _backups, _settings) { Owner = this };
         settings.ShowDialog();
+
+        if (settings.BackupDirectoryChanged)
+        {
+            _backups = new GameLibraryBackupService(_library, settings.SelectedBackupDirectory);
+            SetStatus($"Backup folder updated · {_backups.BackupDirectory}");
+        }
+
         if (settings.LibraryRestored)
         {
             LoadLibrary();
