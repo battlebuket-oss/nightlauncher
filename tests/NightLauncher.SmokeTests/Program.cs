@@ -309,6 +309,8 @@ internal static class Program
                 "main WPF window should expose its search control in the generated XAML fields");
             Assert(HasGeneratedField(typeof(NightLauncher.MainWindow), "LaunchButton"),
                 "main WPF window should expose its launch control in the generated XAML fields");
+            Assert(HasGeneratedField(typeof(NightLauncher.MainWindow), "ScanSteamButton"),
+                "main WPF window should expose the installed Steam library scan action");
 
             settingsService.SaveBackupDirectory(backupDirectory);
             Assert(string.Equals(settingsService.LoadBackupDirectory(), Path.GetFullPath(backupDirectory), StringComparison.OrdinalIgnoreCase),
