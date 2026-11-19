@@ -512,6 +512,10 @@ internal static class Program
             Assert(gamesListControl?.Items.Count == 1 &&
                    ((GameEntry)gamesListControl.Items[0]).Category == "Action",
                 "category filter should show only games in the selected category");
+            searchControl!.Text = "RPG";
+            Assert(gamesListControl?.Items.Count == 0,
+                "text search should be combined with the selected category filter");
+            searchControl.Clear();
             var allCategories = categoryFilter.Items.OfType<ComboBoxItem>().First(item =>
                 string.Equals(item.Content?.ToString(), "All categories", StringComparison.OrdinalIgnoreCase));
             categoryFilter.SelectedItem = allCategories;
