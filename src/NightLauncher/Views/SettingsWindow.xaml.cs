@@ -200,7 +200,7 @@ public partial class SettingsWindow : Window
                 UseShellExecute = true
             });
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException or System.ComponentModel.Win32Exception)
         {
             MessageBox.Show(this, $"Windows could not open the backup folder.\n\n{exception.Message}",
                 "NightLauncher", MessageBoxButton.OK, MessageBoxImage.Warning);
