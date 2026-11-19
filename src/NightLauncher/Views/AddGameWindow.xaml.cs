@@ -19,6 +19,7 @@ public partial class AddGameWindow : Window
         {
             HeadingText.Text = "Edit game";
             NameTextBox.Text = _original.Name;
+            CategoryTextBox.Text = _original.Category;
             ExecutableTextBox.Text = _original.ExecutablePath;
             SteamAppIdTextBox.Text = _original.SteamAppId;
             ArgumentsTextBox.Text = _original.LaunchArguments;
@@ -27,6 +28,7 @@ public partial class AddGameWindow : Window
         }
         else
         {
+            CategoryTextBox.Text = "PC Game";
             LaunchModeCombo.SelectedIndex = 0;
         }
 
@@ -85,6 +87,11 @@ public partial class AddGameWindow : Window
     {
         var name = NameTextBox.Text.Trim();
         var mode = (LaunchModeCombo.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "Executable";
+        var category = CategoryTextBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(category))
+        {
+            category = "PC Game";
+        }
 
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -107,7 +114,7 @@ public partial class AddGameWindow : Window
                 Name = name,
                 LaunchMode = "Steam",
                 SteamAppId = parsedAppId.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                Category = _original?.Category ?? "PC Game",
+                Category = category,
                 AddedUtc = _original?.AddedUtc ?? DateTimeOffset.UtcNow,
                 LastLaunchedUtc = _original?.LastLaunchedUtc,
                 NeedsLaunchConfirmation = _original?.NeedsLaunchConfirmation ?? false,
@@ -151,7 +158,7 @@ public partial class AddGameWindow : Window
             ExecutablePath = executable,
             LaunchArguments = arguments,
             WorkingDirectory = directory,
-            Category = _original?.Category ?? "PC Game",
+            Category = category,
             AddedUtc = _original?.AddedUtc ?? DateTimeOffset.UtcNow,
             LastLaunchedUtc = _original?.LastLaunchedUtc,
             NeedsLaunchConfirmation = _original?.NeedsLaunchConfirmation ?? false,
