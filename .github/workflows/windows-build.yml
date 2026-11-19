@@ -84,8 +84,8 @@ jobs:
       - name: Build installer, optionally sign, and package
         shell: pwsh
         env:
-          WINDOWS_SIGNING_CERTIFICATE_BASE64: ${{ github.event_name == 'pull_request' && '' || secrets.WINDOWS_SIGNING_CERTIFICATE_BASE64 }}
-          WINDOWS_SIGNING_CERTIFICATE_PASSWORD: ${{ github.event_name == 'pull_request' && '' || secrets.WINDOWS_SIGNING_CERTIFICATE_PASSWORD }}
+          WINDOWS_SIGNING_CERTIFICATE_BASE64: ${{ github.event_name != 'pull_request' && secrets.WINDOWS_SIGNING_CERTIFICATE_BASE64 || '' }}
+          WINDOWS_SIGNING_CERTIFICATE_PASSWORD: ${{ github.event_name != 'pull_request' && secrets.WINDOWS_SIGNING_CERTIFICATE_PASSWORD || '' }}
         run: |
           $ErrorActionPreference = "Stop"
           $programFiles = [Environment]::GetFolderPath("ProgramFiles")
