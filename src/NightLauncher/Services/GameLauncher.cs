@@ -39,6 +39,11 @@ public sealed class GameLauncher
             ? Path.GetDirectoryName(game.ExecutablePath)!
             : game.WorkingDirectory;
 
+        if (!Path.IsPathFullyQualified(workingDirectory))
+        {
+            return new LaunchResult(false, "The selected working directory must be an absolute path. Edit the game entry and choose its full folder location.");
+        }
+
         if (!Directory.Exists(workingDirectory))
         {
             return new LaunchResult(false, "The selected working directory does not exist. Edit the game entry to update it.");
