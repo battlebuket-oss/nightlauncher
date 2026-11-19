@@ -12,6 +12,7 @@
 - Steam entries are handed to the official Steam client using its registered `steam://rungameid/<appid>` protocol.
 - Optional launch arguments for direct executable entries.
 - Search and browse a local game library.
+- Scan only a folder explicitly selected by the user (bounded to four directory levels and 500 candidates by default); discovered executables are never auto-added or launched.
 - Import and export the library as JSON.
 - Local-only storage under the user's Local AppData folder.
 - Automatic pre-change backups with a rolling retention limit of 20 copies.
@@ -56,7 +57,7 @@ The output is NightLauncher.exe in the publish folder. It does not require a sep
 
     dotnet run --project tests/NightLauncher.SmokeTests/NightLauncher.SmokeTests.csproj -c Release
 
-The smoke tests cover library persistence, JSON import/export, legacy library compatibility, Steam URI generation and launch-target validation. The Windows workflow runs them before publishing.
+The Windows smoke suite covers library persistence, JSON import/export, legacy library compatibility, Steam URI generation, backup/restore/retention, selected-folder discovery limits, launch-target validation, and WPF window/XAML initialization. The Windows workflow also checks NuGet packages for known vulnerabilities before creating the installer and release artifacts.
 
 ## Add a direct executable game
 
@@ -66,13 +67,17 @@ The smoke tests cover library persistence, JSON import/export, legacy library co
 4. Optionally add launch arguments. Leave them blank unless the game's official documentation requires them.
 5. Save, select the game in the library, and press **Launch**.
 
-## Local data and privacy
+## Local data, backups and privacy
 
 The library is stored at:
 
     %LocalAppData%\NightLauncher\library.json
 
-Settings and logs are also local. Export a JSON backup before reinstalling Windows or deleting the application data folder. Imported JSON is validated before it is added to the library.
+Rolling backups are stored at:
+
+    %LocalAppData%\NightLauncher\backups
+
+NightLauncher creates a backup before each change to an existing library and retains the 20 newest copies. You can create an additional backup or restore the newest backup from **Settings & privacy**. Restoring validates the file, first preserves the current library, and requires one-time confirmation before restored launch targets can run. Logs are stored locally under `%LocalAppData%\NightLauncher\logs` and rotated to bounded files. Export an additional backup to an external drive before reinstalling Windows or deleting the application data folder.
 
 ## Security model
 
