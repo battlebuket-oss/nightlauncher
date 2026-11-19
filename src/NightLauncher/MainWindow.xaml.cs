@@ -44,9 +44,8 @@ public partial class MainWindow : Window
         _backups = new GameLibraryBackupService(_library, backupDirectory);
         GamesList.ItemsSource = _games;
         _gamesView = CollectionViewSource.GetDefaultView(_games);
-        _gamesView.SortDescriptions.Add(new SortDescription(nameof(GameEntry.IsFavorite), ListSortDirection.Descending));
-        _gamesView.SortDescriptions.Add(new SortDescription(nameof(GameEntry.Name), ListSortDirection.Ascending));
         _gamesView.Filter = MatchesSearch;
+        ApplyLibrarySort();
         RefreshCategoryFilterChoices();
         LoadLibrary();
     }
@@ -111,6 +110,40 @@ public partial class MainWindow : Window
         }
 
         return string.Equals(first.ExecutablePath, second.ExecutablePath, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void ApplyLibrarySort()
+    {
+        if (_gamesView is null)
+        {
+            return;
+        }
+
+        var sortMode = (SortModeCombo.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "Name";
+        _gamesView.SortDescriptions.Clear();
+        _gamesView.SortDescriptions.Add(new SortDescription(nameof(GameEntry.IsFavorite), ListSortDirection.Descending));
+
+        switch (sortMode)
+        {
+            case "RecentlyPlayed":
+                _gamesView.SortDescriptions.Add(new SortDescription(nameof(GameEntry.LastLaunchedUtc), ListSortDirection.Descending));
+                _gamesView.SortDescriptions.Add(new SortDescription(nameof(GameEntry.Name), ListSortDirection.Ascending));
+                break;
+            case "RecentlyAdded":
+                _gamesView.SortDescriptions.Add(new SortDescription(nameof(GameEntry.AddedUtc), ListSortDirection.Descending));
+                _gamesView.SortDescriptions.Add(new SortDescription(nameof(GameEntry.Name), ListSortDirection.Ascending));
+                break;
+            default:
+                _gamesView.SortDescriptions.Add(new SortDescription(nameof(GameEntry.Name), ListSortDirection.Ascending));
+                break;
+        }
+
+        _gamesView.Refresh();
+    }
+
+    private void SortMode_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        ApplyLibrarySort();
     }
 
     private void RefreshCategoryFilterChoices()
@@ -290,6 +323,7 @@ public partial class MainWindow : Window
         selected.NeedsLaunchConfirmation = false;
         selected.LastLaunchedUtc = DateTimeOffset.UtcNow;
         SaveLibrary();
+        RefreshLibraryView();
         UpdateDetails(selected);
     }
 
