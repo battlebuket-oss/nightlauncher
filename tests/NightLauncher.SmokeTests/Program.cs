@@ -657,6 +657,29 @@ internal static class Program
                    ((GameEntry)gamesListControl.Items[1]).Name == "Alpha recent" &&
                    ((GameEntry)gamesListControl.Items[2]).Name == "Beta older",
                 "alphabetical sorting should order names within the favorites and non-favorites groups");
+
+            var favoritesOnlyCheckBox = mainWindow.FindName("FavoritesOnlyCheckBox") as CheckBox;
+            Assert(favoritesOnlyCheckBox is not null &&
+                   AutomationProperties.GetName(favoritesOnlyCheckBox) == "Show favorites only",
+                "favorites-only filter should expose an explicit automation name");
+            favoritesOnlyCheckBox!.IsChecked = true;
+            Assert(gamesListControl.Items.Count == 1 &&
+                   ((GameEntry)gamesListControl.Items[0]).Name == "Zulu favorite",
+                "favorites-only filter should hide non-favorite games");
+            categoryFilter!.SelectedItem = categoryFilter.Items.OfType<ComboBoxItem>().First(item =>
+                string.Equals(item.Content?.ToString(), "Action", StringComparison.OrdinalIgnoreCase));
+            Assert(gamesListControl.Items.Count == 1 &&
+                   ((GameEntry)gamesListControl.Items[0]).Name == "Zulu favorite",
+                "favorites-only filter should combine with the selected category");
+            categoryFilter.SelectedItem = categoryFilter.Items.OfType<ComboBoxItem>().First(item =>
+                string.Equals(item.Content?.ToString(), "RPG", StringComparison.OrdinalIgnoreCase));
+            Assert(gamesListControl.Items.Count == 0,
+                "favorites-only and category filters should return no results when their conditions do not overlap");
+            categoryFilter.SelectedItem = categoryFilter.Items.OfType<ComboBoxItem>().First(item =>
+                string.Equals(item.Content?.ToString(), "All categories", StringComparison.OrdinalIgnoreCase));
+            favoritesOnlyCheckBox.IsChecked = false;
+            Assert(gamesListControl.Items.Count == 3,
+                "clearing favorites-only should restore all games when All categories is selected");
             var favoriteButton = mainWindow.FindName("ToggleFavoriteButton") as Button;
             Assert(favoriteButton is not null && !favoriteButton.IsEnabled,
                 "favorite toggle should initialize disabled until a game is selected");
