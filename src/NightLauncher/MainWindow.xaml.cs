@@ -14,6 +14,7 @@ namespace NightLauncher;
 public partial class MainWindow : Window
 {
     private readonly GameLibraryService _library = new();
+    private readonly GameLibraryBackupService _backups;
     private readonly GameLauncher _launcher = new();
     private readonly ObservableCollection<GameEntry> _games = [];
     private ICollectionView? _gamesView;
@@ -21,6 +22,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        _backups = new GameLibraryBackupService(_library);
         GamesList.ItemsSource = _games;
         _gamesView = CollectionViewSource.GetDefaultView(_games);
         _gamesView.Filter = MatchesSearch;
@@ -29,6 +31,7 @@ public partial class MainWindow : Window
 
     private void LoadLibrary()
     {
+        _games.Clear();
         try
         {
             foreach (var game in _library.Load().OrderBy(item => item.Name, StringComparer.OrdinalIgnoreCase))
@@ -293,7 +296,13 @@ public partial class MainWindow : Window
 
     private void Settings_Click(object sender, RoutedEventArgs e)
     {
-        new SettingsWindow(_library.LibraryPath) { Owner = this }.ShowDialog();
+        var settings = new SettingsWindow(_library.LibraryPath, _backups) { Owner = this };
+        settings.ShowDialog();
+        if (settings.LibraryRestored)
+        {
+            LoadLibrary();
+            SetStatus($"Library restored · {_games.Count} game(s)");
+        }
     }
 
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e) => RefreshLibraryView();
@@ -338,6 +347,11 @@ public partial class MainWindow : Window
     {
         try
         {
+            if (File.Exists(_library.LibraryPath))
+            {
+                _backups.CreateBackup();
+            }
+
             _library.Save(_games);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidDataException)
