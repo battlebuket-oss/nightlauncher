@@ -13,6 +13,7 @@ public partial class SettingsWindow : Window
 {
     private readonly string _libraryPath;
     private readonly NightLauncherSettingsService _settings;
+    private readonly DiagnosticsService _diagnostics = new();
     private readonly ObservableCollection<BackupFileViewModel> _backupItems = [];
     private GameLibraryBackupService _backups;
 
@@ -203,6 +204,55 @@ public partial class SettingsWindow : Window
         {
             MessageBox.Show(this, $"Windows could not open the backup folder.\n\n{exception.Message}",
                 "NightLauncher", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void OpenLogsFolder_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Directory.CreateDirectory(_diagnostics.LogDirectory);
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = _diagnostics.LogDirectory,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            MessageBox.Show(this, $"Windows could not open the log folder.\\n\\n{exception.Message}",
+                "NightLauncher diagnostics", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void ExportDiagnostics_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new SaveFileDialog
+        {
+            Title = "Export NightLauncher diagnostics",
+            Filter = "ZIP archive (*.zip)|*.zip",
+            DefaultExt = ".zip",
+            AddExtension = true,
+            OverwritePrompt = true,
+            FileName = $"NightLauncher-Diagnostics-{DateTime.Now:yyyyMMdd-HHmmss}.zip"
+        };
+
+        if (dialog.ShowDialog(this) != true)
+        {
+            return;
+        }
+
+        try
+        {
+            var result = _diagnostics.Export(dialog.FileName);
+            MessageBox.Show(this,
+                $"Diagnostics bundle exported to:\\n\\n{result.ArchivePath}\\n\\nLog files included: {result.LogFilesIncluded}. Review the ZIP before sharing it; log content may contain local file paths.",
+                "Diagnostics exported", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidDataException or ArgumentException or InvalidOperationException)
+        {
+            MessageBox.Show(this, $"NightLauncher could not export diagnostics.\\n\\n{exception.Message}",
+                "Diagnostics export failed", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
