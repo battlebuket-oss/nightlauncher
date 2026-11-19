@@ -2,9 +2,10 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Settings"
-        Width="650"
-        Height="590"
-        MinWidth="600"
+        Width="720"
+        Height="760"
+        MinWidth="650"
+        MinHeight="650"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize"
         Background="#0B1020"
@@ -17,7 +18,8 @@
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0">
             <TextBlock Text="Settings &amp; privacy" FontSize="25" FontWeight="Bold"/>
-            <TextBlock Text="NightLauncher keeps your library and backups on this PC." Foreground="#94A3B8" Margin="0,7,0,0"/>
+            <TextBlock Text="Manage your local library, recovery backups, and privacy settings."
+                       Foreground="#94A3B8" Margin="0,7,0,0"/>
         </StackPanel>
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,20,0,12">
@@ -28,16 +30,42 @@
 
                 <Border Background="#111A2B" CornerRadius="10" Padding="15" Margin="0,20,0,0">
                     <StackPanel>
-                        <TextBlock Text="LOCAL BACKUPS" FontWeight="Bold" Foreground="#E9D5FF"/>
-                        <TextBlock x:Name="BackupFolderText" TextWrapping="Wrap" Foreground="#94A3B8" Margin="0,7,0,10"/>
-                        <TextBlock x:Name="BackupStatusText" Text="No backups found." Foreground="#CBD5E1" Margin="0,0,0,12"/>
+                        <TextBlock Text="BACKUP LOCATION" FontWeight="Bold" Foreground="#E9D5FF"/>
+                        <TextBlock x:Name="BackupFolderText" TextWrapping="Wrap" Foreground="#CBD5E1" Margin="0,7,0,10"/>
                         <WrapPanel>
-                            <Button Content="Create backup now" Margin="0,0,8,8" Click="CreateBackup_Click"/>
-                            <Button x:Name="RestoreBackupButton" Content="Restore latest backup" Margin="0,0,8,8"
-                                    IsEnabled="False" Click="RestoreBackup_Click"/>
+                            <Button x:Name="SelectBackupFolderButton" Content="Choose backup folder…"
+                                    Margin="0,0,8,8" Click="SelectBackupFolder_Click"/>
                             <Button Content="Open backup folder" Margin="0,0,8,8" Click="OpenBackupFolder_Click"/>
                         </WrapPanel>
-                        <TextBlock Text="NightLauncher also creates a recovery backup before each change to an existing library. It retains the 20 most recent backups. Restored entries require a one-time launch confirmation."
+                        <TextBlock Text="Changing this folder affects future automatic and manual backups. Existing backups remain in their previous folder."
+                                   TextWrapping="Wrap" Foreground="#94A3B8" FontSize="11"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Background="#111A2B" CornerRadius="10" Padding="15" Margin="0,16,0,0">
+                    <StackPanel>
+                        <TextBlock Text="RECOVERY POINTS" FontWeight="Bold" Foreground="#E9D5FF"/>
+                        <TextBlock x:Name="BackupStatusText" Text="No backups found." Foreground="#CBD5E1" Margin="0,7,0,10"/>
+                        <ListBox x:Name="BackupListBox" Height="190" SelectionMode="Single"
+                                 SelectionChanged="BackupListBox_SelectionChanged">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#172338" CornerRadius="8" Padding="10" Margin="0,0,0,6">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="12"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding CreatedLabel}" Foreground="#94A3B8" FontSize="10" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <WrapPanel Margin="0,12,0,0">
+                            <Button Content="Create backup now" Margin="0,0,8,8" Click="CreateBackup_Click"/>
+                            <Button x:Name="RestoreBackupButton" Content="Restore selected backup" Margin="0,0,8,8"
+                                    IsEnabled="False" Click="RestoreBackup_Click"/>
+                        </WrapPanel>
+                        <TextBlock Text="NightLauncher creates a recovery copy before each change to an existing library and retains the 20 most recent backups in this folder. Restored entries require a one-time launch confirmation."
                                    TextWrapping="Wrap" Foreground="#94A3B8" FontSize="11" Margin="0,2,0,0"/>
                     </StackPanel>
                 </Border>
