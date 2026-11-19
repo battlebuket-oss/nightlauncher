@@ -40,7 +40,7 @@
 - [ ] Configure a trusted publisher Authenticode certificate in repository secrets and verify signed artifacts
 - [ ] Run the installer and uninstaller on a clean Windows 10 VM and a clean Windows 11 VM; confirm user data is preserved
 - [ ] Complete manual keyboard navigation, screen-reader, and high-contrast testing
-- [ ] Add UI automation that interacts with the live app window on an interactive desktop runner
+- [x] Windows CI shows the live WPF window and drives search and favorites-only controls through UI Automation
 - [x] Add malformed settings/library JSON and blocked-storage failure tests
 - [ ] Perform final code review and release signing verification
 

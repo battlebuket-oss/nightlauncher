@@ -7,6 +7,8 @@ using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Interop;
+using System.Windows.Threading;
 using NightLauncher.Models;
 using NightLauncher.Services;
 
@@ -680,6 +682,54 @@ internal static class Program
             favoritesOnlyCheckBox.IsChecked = false;
             Assert(gamesListControl.Items.Count == 3,
                 "clearing favorites-only should restore all games when All categories is selected");
+
+            // Show the real WPF window and drive its controls through Windows UI Automation.
+            mainWindow.Show();
+            mainWindow.Activate();
+            mainWindow.UpdateLayout();
+            mainWindow.Dispatcher.Invoke(DispatcherPriority.ApplicationIdle, new Action(() => { }));
+            var liveWindowHandle = new WindowInteropHelper(mainWindow).Handle;
+            Assert(liveWindowHandle != IntPtr.Zero, "live main window should create a native window handle");
+            var liveWindow = AutomationElement.FromHandle(liveWindowHandle);
+            Assert(liveWindow.Current.Name == "NightLauncher",
+                "UI Automation should attach to the visible NightLauncher window");
+
+            var liveSearch = liveWindow.FindFirst(TreeScope.Descendants,
+                new PropertyCondition(AutomationElement.NameProperty,
+                    "Search games by name, category, Steam App ID, or install location"));
+            Assert(liveSearch is not null, "UI Automation should find the live search field");
+            Assert(liveSearch!.TryGetCurrentPattern(ValuePattern.Pattern, out var liveSearchPattern),
+                "UI Automation should find the live search field's Value pattern");
+            ((ValuePattern)liveSearchPattern).SetValue("Zulu");
+            mainWindow.Dispatcher.Invoke(DispatcherPriority.ApplicationIdle, new Action(() => { }));
+
+            var liveFavorites = liveWindow.FindFirst(TreeScope.Descendants,
+                new PropertyCondition(AutomationElement.NameProperty, "Show favorites only"));
+            Assert(liveFavorites is not null, "UI Automation should find the live favorites-only checkbox");
+            Assert(liveFavorites!.TryGetCurrentPattern(TogglePattern.Pattern, out var liveTogglePattern),
+                "UI Automation should find the live favorites-only checkbox's Toggle pattern");
+            ((TogglePattern)liveTogglePattern).Toggle();
+            mainWindow.Dispatcher.Invoke(DispatcherPriority.ApplicationIdle, new Action(() => { }));
+            Assert(((TogglePattern)liveTogglePattern).Current.ToggleState == ToggleState.On,
+                "UI Automation should be able to turn on the live favorites-only checkbox");
+
+            var liveGamesList = liveWindow.FindFirst(TreeScope.Descendants,
+                new PropertyCondition(AutomationElement.NameProperty, "Games in your library"));
+            Assert(liveGamesList is not null, "UI Automation should find the live games list");
+            var visibleLiveItems = liveGamesList!.FindAll(TreeScope.Descendants,
+                new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.ListItem));
+            Assert(visibleLiveItems.Count == 1,
+                "the live window should show exactly one game after UI Automation searches Zulu and enables favorites-only");
+
+            ((TogglePattern)liveTogglePattern).Toggle();
+            ((ValuePattern)liveSearchPattern).SetValue(string.Empty);
+            mainWindow.Dispatcher.Invoke(DispatcherPriority.ApplicationIdle, new Action(() => { }));
+            var restoredLiveItems = liveGamesList.FindAll(TreeScope.Descendants,
+                new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.ListItem));
+            Assert(restoredLiveItems.Count == 3,
+                "UI Automation should be able to reset the live search and favorites-only filter");
+            mainWindow.Close();
+
             var favoriteButton = mainWindow.FindName("ToggleFavoriteButton") as Button;
             Assert(favoriteButton is not null && !favoriteButton.IsEnabled,
                 "favorite toggle should initialize disabled until a game is selected");

@@ -36,7 +36,7 @@ jobs:
       - name: Build application and smoke tests
         run: dotnet build tests/NightLauncher.SmokeTests/NightLauncher.SmokeTests.csproj --configuration Release
 
-      - name: Run smoke tests
+      - name: Run smoke tests and live UI Automation
         run: dotnet run --project tests/NightLauncher.SmokeTests/NightLauncher.SmokeTests.csproj --configuration Release --no-build
 
       - name: Test release signing policy

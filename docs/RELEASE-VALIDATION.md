@@ -9,6 +9,7 @@ This checklist separates CI-verifiable checks from tests that require a real int
 - [ ] Windows x64 Release build succeeds.
 - [ ] Smoke tests pass (library persistence, Steam URI and Steam library discovery, backup/restore, retention, discovery limits, invalid inputs, favorite persistence/import/export, category editing/filtering, library sort modes, settings preference round-trips, and diagnostics export limits/content selection, and favorites-only/category/search filter combinations).
 - [ ] WPF windows initialize and compiled XAML fields resolve on an STA thread.
+- [x] UI Automation opens the live WPF main window, sets search text, toggles Favorites-only, and verifies the visible game list.
 - [ ] NuGet vulnerability report is reviewed.
 - [ ] Self-contained EXE publishes.
 - [ ] Inno Setup creates the per-user installer.
@@ -35,4 +36,4 @@ This checklist separates CI-verifiable checks from tests that require a real int
 - [ ] Uninstall and confirm the user's library, backups, and logs remain intact.
 - [ ] Verify keyboard navigation (Ctrl+F, Escape, Enter, Delete), high contrast, scaling, and screen-reader labels.
 
-The GitHub-hosted Windows runner can validate compilation, service tests, XAML initialization, and packaging. It does not substitute for these interactive desktop checks on physical or virtual Windows installations.
+The GitHub-hosted Windows runner now also exercises the live WPF window through UI Automation. It still does not substitute for manual keyboard, screen-reader, high-contrast, and compatibility checks on clean Windows 10 and Windows 11 installations.
