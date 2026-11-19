@@ -155,7 +155,7 @@ public partial class AddGameWindow : Window
             AddedUtc = _original?.AddedUtc ?? DateTimeOffset.UtcNow,
             LastLaunchedUtc = _original?.LastLaunchedUtc,
             NeedsLaunchConfirmation = _original?.NeedsLaunchConfirmation ?? false,
-                IsFavorite = _original?.IsFavorite ?? false
+            IsFavorite = _original?.IsFavorite ?? false
         };
 
         DialogResult = true;
