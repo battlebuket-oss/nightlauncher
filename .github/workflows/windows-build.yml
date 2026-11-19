@@ -39,6 +39,10 @@ jobs:
       - name: Run smoke tests
         run: dotnet run --project tests/NightLauncher.SmokeTests/NightLauncher.SmokeTests.csproj --configuration Release --no-build
 
+      - name: Test release signing policy
+        shell: pwsh
+        run: ./tests/PowerShell/Validate-ReleasePolicy.Tests.ps1
+
       - name: Check NuGet packages for known vulnerabilities
         shell: pwsh
         run: |
@@ -122,13 +126,7 @@ jobs:
 
           $hasCertificate = -not [string]::IsNullOrWhiteSpace($env:WINDOWS_SIGNING_CERTIFICATE_BASE64)
           $hasPassword = -not [string]::IsNullOrWhiteSpace($env:WINDOWS_SIGNING_CERTIFICATE_PASSWORD)
-          $isVersionedRelease = $env:GITHUB_REF -like "refs/tags/*"
-          if ($hasCertificate -xor $hasPassword) {
-            throw "Both WINDOWS_SIGNING_CERTIFICATE_BASE64 and WINDOWS_SIGNING_CERTIFICATE_PASSWORD must be configured together."
-          }
-          if ($isVersionedRelease -and -not $hasCertificate) {
-            throw "Stable, versioned releases are blocked until a trusted Authenticode certificate is configured."
-          }
+          & "scripts/Validate-ReleasePolicy.ps1" -Reference $env:GITHUB_REF -ReferenceName $env:GITHUB_REF_NAME -AppVersion $appVersion -HasCertificate $hasCertificate -HasPassword $hasPassword
 
           if ($hasCertificate) {
             $pfxPath = Join-Path $env:RUNNER_TEMP "nightlauncher-signing.pfx"
