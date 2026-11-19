@@ -21,6 +21,8 @@ This checklist separates CI-verifiable checks from tests that require a real int
 - [ ] Add a Steam App ID and confirm the request opens the official Steam client.
 - [ ] Scan a user-selected folder, select candidate executables, and verify no file is launched during discovery.
 - [ ] Confirm discovered/imported entries require a one-time trust review before launching.
+- [ ] Select a custom backup folder and restart the app to confirm the preference persists.
+- [ ] Create multiple recovery points, select a non-latest backup, and restore it.
 - [ ] Create a backup, make a library change, and restore the previous backup.
 - [ ] Confirm restoring creates a safety backup of the current library.
 - [ ] Uninstall and confirm the user's library, backups, and logs remain intact.
