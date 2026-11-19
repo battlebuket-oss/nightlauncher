@@ -35,7 +35,7 @@ For example, the Steam App ID for GTA V Legacy is `271590`. NightLauncher sends 
 
 After the Windows build, smoke tests, vulnerability check, and packaging steps pass, the workflow publishes a CI prerelease containing the self-contained executable, portable ZIP, and per-user Windows installer. The Actions run also retains the artifacts for 30 days.
 
-For a stable, versioned GitHub Release, push a tag such as `v1.2.1`; the workflow will attach the executable, portable ZIP, and installer.
+For a stable, versioned GitHub Release, push a tag such as `v1.3.0`; the workflow will attach the executable, portable ZIP, and installer.
 
 The release pipeline supports optional Authenticode signing. To enable it, repository administrators must configure the GitHub Actions secrets `WINDOWS_SIGNING_CERTIFICATE_BASE64` (a base64-encoded PFX file) and `WINDOWS_SIGNING_CERTIFICATE_PASSWORD`. Without both secrets, CI explicitly publishes unsigned binaries; Windows SmartScreen may show an unknown-publisher warning. Only download builds from this repository, and review the source before running it.
 
@@ -86,4 +86,4 @@ NightLauncher starts only the executable path explicitly selected by the user or
 
 ## Project status
 
-Version 1.2.1 adds selectable backup storage, a recovery-point picker, local recovery backups, guarded restore, bounded logs, a per-user installer, optional Authenticode signing, and an expanded Windows packaging pipeline. It is still a development release until signing is configured and compatibility/UI checks are completed on real Windows 10 and Windows 11 user sessions. See [ROADMAP.md](ROADMAP.md) for remaining release work. GitHub Actions is the source of truth for build, smoke-test, vulnerability-check, and packaging results.
+Version 1.3.0 adds selectable backup storage, a recovery-point picker, local recovery backups, guarded restore, bounded logs, a per-user installer, optional Authenticode signing, and an expanded Windows packaging pipeline. It is still a development release until signing is configured and compatibility/UI checks are completed on real Windows 10 and Windows 11 user sessions. See [ROADMAP.md](ROADMAP.md) for remaining release work. GitHub Actions is the source of truth for build, smoke-test, vulnerability-check, and packaging results.
