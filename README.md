@@ -9,7 +9,7 @@
 - Native Windows desktop UI (WPF, .NET 10).
 - Add and edit games using a directly selected executable.
 - Add a Steam game using its numeric Steam App ID.
-- Discover installed Steam games across the configured local Steam libraries by reading `libraryfolders.vdf` and `appmanifest_*.acf`; newly discovered entries require a one-time review and launch through the official Steam client.
+- Discover installed Steam games across the configured local Steam libraries by reading `libraryfolders.vdf` and `appmanifest_*.acf`; when automatic detection misses a portable or custom Steam install, select its library folder manually. Newly discovered entries require a one-time review and launch through the official Steam client.
 - Steam entries are handed to the official Steam client using its registered `steam://rungameid/<appid>` protocol.
 - Optional launch arguments for direct executable entries.
 - Search and browse a local game library.
