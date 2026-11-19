@@ -35,6 +35,7 @@ try
     var imported = service.Import(exportPath);
     Assert(imported.Count == 1, "JSON export/import should preserve the item count");
     Assert(imported[0].Name == game.Name, "JSON export/import should preserve the game name");
+    Assert(imported[0].NeedsLaunchConfirmation, "imported games should require a one-time executable review");
 
     var missingResult = new GameLauncher().Launch(new GameEntry
     {
