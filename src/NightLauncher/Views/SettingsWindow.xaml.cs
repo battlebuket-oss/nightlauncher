@@ -1,7 +1,10 @@
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
-
+using System.Windows.Controls;
+using Microsoft.Win32;
+using NightLauncher.Models;
 using NightLauncher.Services;
 
 namespace NightLauncher.Views;
@@ -9,41 +12,71 @@ namespace NightLauncher.Views;
 public partial class SettingsWindow : Window
 {
     private readonly string _libraryPath;
-    private readonly GameLibraryBackupService _backups;
+    private readonly NightLauncherSettingsService _settings;
+    private readonly ObservableCollection<BackupFileViewModel> _backupItems = [];
+    private GameLibraryBackupService _backups;
 
-    public SettingsWindow(string libraryPath, GameLibraryBackupService backups)
+    public SettingsWindow(
+        string libraryPath,
+        GameLibraryBackupService backups,
+        NightLauncherSettingsService settings)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(libraryPath);
         ArgumentNullException.ThrowIfNull(backups);
+        ArgumentNullException.ThrowIfNull(settings);
 
         InitializeComponent();
         _libraryPath = libraryPath;
         _backups = backups;
+        _settings = settings;
+
         LibraryPathText.Text = libraryPath;
         BackupFolderText.Text = backups.BackupDirectory;
+        BackupListBox.ItemsSource = _backupItems;
         RefreshBackupStatus();
     }
 
     public bool LibraryRestored { get; private set; }
 
+    public string SelectedBackupDirectory => _backups.BackupDirectory;
+
+    public bool BackupDirectoryChanged { get; private set; }
+
     private void RefreshBackupStatus()
     {
         try
         {
+            _backupItems.Clear();
             var backupFiles = _backups.GetBackups();
+            foreach (var path in backupFiles)
+            {
+                var created = File.GetLastWriteTimeUtc(path);
+                _backupItems.Add(new BackupFileViewModel(
+                    path,
+                    Path.GetFileName(path),
+                    created.ToLocalTime().ToString("g")));
+            }
+
             BackupStatusText.Text = backupFiles.Count switch
             {
-                0 => "No backups found.",
-                1 => "1 backup available. The newest backup is shown first.",
-                _ => $"{backupFiles.Count} backups available. The newest backup is shown first."
+                0 => "No backups found in the selected folder.",
+                1 => "1 recovery point available. The newest point is selected.",
+                _ => $"{backupFiles.Count} recovery points available. Select one to restore."
             };
-            RestoreBackupButton.IsEnabled = backupFiles.Count > 0;
+
+            BackupListBox.SelectedIndex = backupFiles.Count > 0 ? 0 : -1;
+            RestoreBackupButton.IsEnabled = BackupListBox.SelectedItem is BackupFileViewModel;
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidDataException)
         {
             BackupStatusText.Text = $"Unable to read backups: {exception.Message}";
             RestoreBackupButton.IsEnabled = false;
         }
+    }
+
+    private void BackupListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        RestoreBackupButton.IsEnabled = BackupListBox.SelectedItem is BackupFileViewModel;
     }
 
     private void CopyPath_Click(object sender, RoutedEventArgs e)
@@ -56,6 +89,53 @@ public partial class SettingsWindow : Window
         catch (System.Runtime.InteropServices.ExternalException)
         {
             MessageBox.Show(this, "Windows could not access the clipboard.", "NightLauncher", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void SelectBackupFolder_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFolderDialog
+        {
+            Title = "Choose where NightLauncher stores recovery backups",
+            Multiselect = false,
+            InitialDirectory = Directory.Exists(_backups.BackupDirectory)
+                ? _backups.BackupDirectory
+                : Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+        };
+
+        if (dialog.ShowDialog(this) != true)
+        {
+            return;
+        }
+
+        try
+        {
+            var selectedDirectory = Path.GetFullPath(dialog.FolderName);
+            Directory.CreateDirectory(selectedDirectory);
+
+            // Verify the selected destination is writable before persisting the preference.
+            var probePath = Path.Combine(selectedDirectory, $".nightlauncher-write-test-{Guid.NewGuid():N}.tmp");
+            using (new FileStream(probePath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+            {
+            }
+            File.Delete(probePath);
+
+            _settings.SaveBackupDirectory(selectedDirectory);
+            _backups = new GameLibraryBackupService(
+                new GameLibraryService(_libraryPath),
+                selectedDirectory);
+            BackupDirectoryChanged = true;
+            BackupFolderText.Text = _backups.BackupDirectory;
+            RefreshBackupStatus();
+
+            MessageBox.Show(this,
+                "Backup location updated. Existing backups in the previous folder have not been moved.",
+                "Backup location changed", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or InvalidDataException)
+        {
+            MessageBox.Show(this, $"NightLauncher could not use that backup folder. The previous location is unchanged.\n\n{exception.Message}",
+                "Backup folder unavailable", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -77,9 +157,16 @@ public partial class SettingsWindow : Window
 
     private void RestoreBackup_Click(object sender, RoutedEventArgs e)
     {
+        if (BackupListBox.SelectedItem is not BackupFileViewModel selected)
+        {
+            MessageBox.Show(this, "Select a recovery point first.",
+                "No backup selected", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
         var answer = MessageBox.Show(this,
-            "Restore the newest backup?\n\nYour current library will first be backed up. Restored launch targets will require a one-time trust confirmation.",
-            "Restore latest backup", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            $"Restore this recovery point?\n\n{selected.DisplayName}\nCreated: {selected.CreatedLabel}\n\nYour current library will first be backed up. Restored launch targets will require a one-time trust confirmation.",
+            "Restore selected backup", MessageBoxButton.YesNo, MessageBoxImage.Warning);
 
         if (answer != MessageBoxResult.Yes)
         {
@@ -88,15 +175,15 @@ public partial class SettingsWindow : Window
 
         try
         {
-            var restoredPath = _backups.RestoreLatestBackup();
+            _backups.RestoreBackup(selected.FullPath);
             LibraryRestored = true;
             RefreshBackupStatus();
-            MessageBox.Show(this, $"Library restored from:\n\n{restoredPath}",
+            MessageBox.Show(this, $"Library restored from:\n\n{selected.FullPath}",
                 "Restore complete", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidDataException or System.Text.Json.JsonException)
         {
-            MessageBox.Show(this, $"NightLauncher could not restore the backup. Your existing library was not replaced.\n\n{exception.Message}",
+            MessageBox.Show(this, $"NightLauncher could not restore the selected backup. Your existing library was not replaced.\n\n{exception.Message}",
                 "Restore failed", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
