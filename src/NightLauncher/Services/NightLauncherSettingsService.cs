@@ -6,6 +6,7 @@ namespace NightLauncher.Services;
 public sealed class NightLauncherSettingsService
 {
     private const long MaximumSettingsBytes = 64 * 1024;
+    private static readonly string[] SupportedSortModes = ["Name", "RecentlyPlayed", "RecentlyAdded"];
 
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
@@ -26,19 +27,7 @@ public sealed class NightLauncherSettingsService
 
     public string? LoadBackupDirectory()
     {
-        if (!File.Exists(SettingsPath))
-        {
-            return null;
-        }
-
-        var info = new FileInfo(SettingsPath);
-        if (info.Length > MaximumSettingsBytes)
-        {
-            throw new InvalidDataException("NightLauncher settings exceed the 64 KB safety limit.");
-        }
-
-        using var stream = new FileStream(SettingsPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-        var settings = JsonSerializer.Deserialize<SettingsDocument>(stream, SerializerOptions);
+        var settings = ReadSettingsDocument();
         if (string.IsNullOrWhiteSpace(settings?.BackupDirectory))
         {
             return null;
@@ -59,6 +48,13 @@ public sealed class NightLauncherSettingsService
         }
     }
 
+    public string LoadPreferredSortMode()
+    {
+        var configured = ReadSettingsDocument()?.PreferredSortMode;
+        return SupportedSortModes.FirstOrDefault(mode =>
+            string.Equals(mode, configured, StringComparison.OrdinalIgnoreCase)) ?? "Name";
+    }
+
     public void SaveBackupDirectory(string? backupDirectory)
     {
         string? normalized = null;
@@ -76,6 +72,50 @@ public sealed class NightLauncherSettingsService
             }
         }
 
+        var preferredSortMode = LoadPreferredSortMode();
+        WriteSettingsDocument(new SettingsDocument
+        {
+            BackupDirectory = normalized,
+            PreferredSortMode = preferredSortMode
+        });
+    }
+
+    public void SavePreferredSortMode(string? preferredSortMode)
+    {
+        var normalized = SupportedSortModes.FirstOrDefault(mode =>
+            string.Equals(mode, preferredSortMode, StringComparison.OrdinalIgnoreCase));
+        if (normalized is null)
+        {
+            throw new ArgumentException("Choose a supported library sort mode.", nameof(preferredSortMode));
+        }
+
+        var backupDirectory = LoadBackupDirectory();
+        WriteSettingsDocument(new SettingsDocument
+        {
+            BackupDirectory = backupDirectory,
+            PreferredSortMode = normalized
+        });
+    }
+
+    private SettingsDocument? ReadSettingsDocument()
+    {
+        if (!File.Exists(SettingsPath))
+        {
+            return null;
+        }
+
+        var info = new FileInfo(SettingsPath);
+        if (info.Length > MaximumSettingsBytes)
+        {
+            throw new InvalidDataException("NightLauncher settings exceed the 64 KB safety limit.");
+        }
+
+        using var stream = new FileStream(SettingsPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        return JsonSerializer.Deserialize<SettingsDocument>(stream, SerializerOptions);
+    }
+
+    private void WriteSettingsDocument(SettingsDocument settings)
+    {
         var parent = Path.GetDirectoryName(SettingsPath)
             ?? throw new InvalidOperationException("The settings file has no parent directory.");
         Directory.CreateDirectory(parent);
@@ -85,7 +125,7 @@ public sealed class NightLauncherSettingsService
         {
             using (var stream = new FileStream(temporary, FileMode.Create, FileAccess.Write, FileShare.None))
             {
-                JsonSerializer.Serialize(stream, new SettingsDocument { BackupDirectory = normalized }, SerializerOptions);
+                JsonSerializer.Serialize(stream, settings, SerializerOptions);
                 stream.Flush(flushToDisk: true);
             }
 
@@ -118,5 +158,7 @@ public sealed class NightLauncherSettingsService
         }
 
         public string? BackupDirectory { get; set; }
+
+        public string? PreferredSortMode { get; set; } = "Name";
     }
 }
