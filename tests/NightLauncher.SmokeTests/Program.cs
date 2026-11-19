@@ -297,6 +297,83 @@ internal static class Program
             Assert(malformedSteamGames.Count == 0,
                 "Steam discovery should safely ignore malformed app manifest files");
 
+            var oversizedSteamRoot = Path.Combine(root, "oversized-steam");
+            var oversizedSteamApps = Path.Combine(oversizedSteamRoot, "steamapps");
+            var oversizedInstallDirectory = Path.Combine(oversizedSteamApps, "common", "Oversized Metadata Fixture");
+            Directory.CreateDirectory(oversizedInstallDirectory);
+            File.WriteAllText(Path.Combine(oversizedSteamApps, "appmanifest_556.acf"),
+                "\"AppState\" { \"appid\" \"556\" \"name\" \"Oversized Metadata Fixture\" \"installdir\" \"Oversized Metadata Fixture\" }");
+            File.WriteAllText(Path.Combine(oversizedSteamApps, "libraryfolders.vdf"),
+                "\"libraryfolders\" { }" + new string('x', 1024 * 1024 + 1));
+            var oversizedSteamGames = new SteamLibraryDiscoveryService().DiscoverInstalledGames([oversizedSteamRoot]);
+            Assert(oversizedSteamGames.Any(item => item.AppId == "556"),
+                "Steam discovery should skip an oversized library metadata file but still scan the valid primary library");
+
+            var nestedInstallRoot = Path.Combine(root, "nested-install-steam");
+            var nestedInstallApps = Path.Combine(nestedInstallRoot, "steamapps");
+            var nestedInstallDirectory = Path.Combine(nestedInstallApps, "common", "Nested", "Install");
+            Directory.CreateDirectory(nestedInstallDirectory);
+            File.WriteAllText(Path.Combine(nestedInstallApps, "appmanifest_557.acf"),
+                "\"AppState\" { \"appid\" \"557\" \"name\" \"Nested Install Fixture\" \"installdir\" \"Nested\\\\Install\" }");
+            var nestedInstallGames = new SteamLibraryDiscoveryService().DiscoverInstalledGames([nestedInstallRoot]);
+            Assert(nestedInstallGames.All(item => item.AppId != "557"),
+                "Steam discovery should reject nested install-directory names rather than traversing path fragments");
+
+            var externalGameDirectory = Path.Combine(root, "external-steam-game");
+            Directory.CreateDirectory(externalGameDirectory);
+            var linkedInstallRoot = Path.Combine(root, "linked-install-steam");
+            var linkedInstallApps = Path.Combine(linkedInstallRoot, "steamapps");
+            var linkedInstallCommon = Path.Combine(linkedInstallApps, "common");
+            var linkedGameDirectory = Path.Combine(linkedInstallCommon, "Linked Game");
+            Directory.CreateDirectory(linkedInstallCommon);
+            var linkedInstallCreated = false;
+            try
+            {
+                Directory.CreateSymbolicLink(linkedGameDirectory, externalGameDirectory);
+                linkedInstallCreated = true;
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or
+                                               PlatformNotSupportedException or NotSupportedException)
+            {
+                // Some Windows configurations do not grant symbolic-link creation to the test user.
+            }
+
+            if (linkedInstallCreated)
+            {
+                File.WriteAllText(Path.Combine(linkedInstallApps, "appmanifest_558.acf"),
+                    "\"AppState\" { \"appid\" \"558\" \"name\" \"Linked Game Fixture\" \"installdir\" \"Linked Game\" }");
+                var linkedInstallGames = new SteamLibraryDiscoveryService().DiscoverInstalledGames([linkedInstallRoot]);
+                Assert(linkedInstallGames.All(item => item.AppId != "558"),
+                    "Steam discovery must reject game install directories that are reparse points");
+            }
+
+            var externalCommonDirectory = Path.Combine(root, "external-steam-common");
+            Directory.CreateDirectory(Path.Combine(externalCommonDirectory, "Common Link Game"));
+            var linkedCommonRoot = Path.Combine(root, "linked-common-steam");
+            var linkedCommonApps = Path.Combine(linkedCommonRoot, "steamapps");
+            Directory.CreateDirectory(linkedCommonApps);
+            var linkedCommonDirectory = Path.Combine(linkedCommonApps, "common");
+            var linkedCommonCreated = false;
+            try
+            {
+                Directory.CreateSymbolicLink(linkedCommonDirectory, externalCommonDirectory);
+                linkedCommonCreated = true;
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or
+                                               PlatformNotSupportedException or NotSupportedException)
+            {
+                // Some Windows configurations do not grant symbolic-link creation to the test user.
+            }
+
+            if (linkedCommonCreated)
+            {
+                File.WriteAllText(Path.Combine(linkedCommonApps, "appmanifest_559.acf"),
+                    "\"AppState\" { \"appid\" \"559\" \"name\" \"Common Link Fixture\" \"installdir\" \"Common Link Game\" }");
+                var linkedCommonGames = new SteamLibraryDiscoveryService().DiscoverInstalledGames([linkedCommonRoot]);
+                Assert(linkedCommonGames.Count == 0,
+                    "Steam discovery must reject a common game directory that is a reparse point");
+            }
+
             // Instantiate the WPF application and windows on an STA thread so CI also parses
             // the XAML resources, resolves event handlers, and creates the UI control trees.
             var app = new NightLauncher.App();
