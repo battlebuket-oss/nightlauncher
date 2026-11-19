@@ -254,6 +254,49 @@ internal static class Program
             Assert(relativeWorkingDirectoryResult.Message.Contains("absolute path", StringComparison.OrdinalIgnoreCase),
                 "relative working directory should produce a clear corrective message");
 
+            var steamDiscoveryRoot = Path.Combine(root, "steam-discovery");
+            var secondarySteamLibrary = Path.Combine(root, "steam-secondary-library");
+            var primarySteamApps = Path.Combine(steamDiscoveryRoot, "steamapps");
+            var secondarySteamApps = Path.Combine(secondarySteamLibrary, "steamapps");
+            var gtaInstallDirectory = Path.Combine(primarySteamApps, "common", "Grand Theft Auto V");
+            var secondaryInstallDirectory = Path.Combine(secondarySteamApps, "common", "Secondary Game");
+            Directory.CreateDirectory(gtaInstallDirectory);
+            Directory.CreateDirectory(secondaryInstallDirectory);
+            Directory.CreateDirectory(Path.Combine(primarySteamApps, "outside"));
+
+            var escapedPrimaryPath = steamDiscoveryRoot.Replace("\\", "\\\\", StringComparison.Ordinal);
+            var escapedSecondaryPath = secondarySteamLibrary.Replace("\\", "\\\\", StringComparison.Ordinal);
+            File.WriteAllText(Path.Combine(primarySteamApps, "libraryfolders.vdf"),
+                $"\"libraryfolders\" {{ \"0\" {{ \"path\" \"{escapedPrimaryPath}\" }} \"1\" {{ \"path\" \"{escapedSecondaryPath}\" }} }}");
+            File.WriteAllText(Path.Combine(primarySteamApps, "appmanifest_271590.acf"),
+                "\"AppState\" { \"appid\" \"271590\" \"name\" \"Grand Theft Auto V\" \"installdir\" \"Grand Theft Auto V\" }");
+            File.WriteAllText(Path.Combine(primarySteamApps, "appmanifest_999.acf"),
+                "\"AppState\" { \"appid\" \"999\" \"name\" \"Missing Install\" \"installdir\" \"Not Installed\" }");
+            File.WriteAllText(Path.Combine(primarySteamApps, "appmanifest_1001.acf"),
+                "\"AppState\" { \"appid\" \"1001\" \"name\" \"Path Escape Fixture\" \"installdir\" \"..\\\\outside\" }");
+            File.WriteAllText(Path.Combine(secondarySteamApps, "appmanifest_440.acf"),
+                "\"AppState\" { \"appid\" \"440\" \"name\" \"Secondary Game\" \"installdir\" \"Secondary Game\" }");
+            File.WriteAllText(Path.Combine(secondarySteamApps, "appmanifest_441.acf"),
+                "\"AppState\" { \"appid\" \"not-a-number\" \"name\" \"Invalid App ID\" \"installdir\" \"Secondary Game\" }");
+
+            var discoveredSteamGames = new SteamLibraryDiscoveryService().DiscoverInstalledGames([steamDiscoveryRoot]);
+            Assert(discoveredSteamGames.Count == 2,
+                "Steam discovery should return installed games from the primary and secondary libraries only");
+            Assert(discoveredSteamGames.Any(item => item.AppId == "271590" && item.Name == "Grand Theft Auto V"),
+                "Steam discovery should read the GTA V App ID and display name from local metadata");
+            Assert(discoveredSteamGames.Any(item => item.AppId == "440" && item.InstallDirectory == secondaryInstallDirectory),
+                "Steam discovery should follow libraryfolders.vdf to a secondary Steam library");
+            Assert(discoveredSteamGames.All(item => item.AppId is not "999" and not "1001"),
+                "Steam discovery must ignore missing installs and manifest paths that escape the common game directory");
+
+            var malformedSteamRoot = Path.Combine(root, "malformed-steam");
+            var malformedSteamApps = Path.Combine(malformedSteamRoot, "steamapps");
+            Directory.CreateDirectory(Path.Combine(malformedSteamApps, "common", "Malformed Fixture"));
+            File.WriteAllText(Path.Combine(malformedSteamApps, "appmanifest_555.acf"), "\"AppState\" { \"appid\" \"555\"");
+            var malformedSteamGames = new SteamLibraryDiscoveryService().DiscoverInstalledGames([malformedSteamRoot]);
+            Assert(malformedSteamGames.Count == 0,
+                "Steam discovery should safely ignore malformed app manifest files");
+
             // Instantiate the WPF application and windows on an STA thread so CI also parses
             // the XAML resources, resolves event handlers, and creates the UI control trees.
             var app = new NightLauncher.App();
@@ -266,6 +309,8 @@ internal static class Program
                 "main WPF window should expose its search control in the generated XAML fields");
             Assert(HasGeneratedField(typeof(NightLauncher.MainWindow), "LaunchButton"),
                 "main WPF window should expose its launch control in the generated XAML fields");
+            Assert(HasGeneratedField(typeof(NightLauncher.MainWindow), "ScanSteamButton"),
+                "main WPF window should expose the installed Steam library scan action");
 
             settingsService.SaveBackupDirectory(backupDirectory);
             Assert(string.Equals(settingsService.LoadBackupDirectory(), Path.GetFullPath(backupDirectory), StringComparison.OrdinalIgnoreCase),
