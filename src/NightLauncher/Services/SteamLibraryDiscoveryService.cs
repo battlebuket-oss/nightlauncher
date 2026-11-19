@@ -16,8 +16,11 @@ public sealed class SteamLibraryDiscoveryService
 {
     private const int MaximumLibraries = 32;
     private const int MaximumManifestsPerLibrary = 512;
+    private const int MaximumManifestCandidatesScanned = 2048;
+    private const int MaximumVdfFilesRead = 2048;
     private const int MaximumDiscoveredGames = 1000;
-    private const long MaximumVdfBytes = 2 * 1024 * 1024;
+    private const long MaximumVdfBytes = 1 * 1024 * 1024;
+    private const long MaximumTotalVdfBytes = 32 * 1024 * 1024;
 
     public IReadOnlyList<DiscoveredSteamGame> DiscoverInstalledGames() =>
         DiscoverInstalledGames(GetSteamInstallRoots());
@@ -26,7 +29,8 @@ public sealed class SteamLibraryDiscoveryService
     {
         ArgumentNullException.ThrowIfNull(steamInstallRoots);
 
-        var libraries = ResolveSteamLibraries(steamInstallRoots);
+        var budget = new ScanBudget();
+        var libraries = ResolveSteamLibraries(steamInstallRoots, budget);
         var discovered = new Dictionary<string, DiscoveredSteamGame>(StringComparer.Ordinal);
 
         foreach (var library in libraries)
@@ -45,8 +49,24 @@ public sealed class SteamLibraryDiscoveryService
                 continue;
             }
 
+            var commonDirectory = Path.GetFullPath(Path.Combine(steamAppsDirectory, "common"));
+            var commonAttributes = TryGetAttributes(commonDirectory);
+            if (commonAttributes is null ||
+                (commonAttributes.Value & FileAttributes.Directory) == 0 ||
+                (commonAttributes.Value & FileAttributes.ReparsePoint) != 0)
+            {
+                continue;
+            }
+
             foreach (var manifestPath in manifests)
             {
+                if (!budget.TryConsumeManifestCandidate())
+                {
+                    return discovered.Values
+                        .OrderBy(game => game.Name, StringComparer.OrdinalIgnoreCase)
+                        .ToArray();
+                }
+
                 if (discovered.Count >= MaximumDiscoveredGames)
                 {
                     return discovered.Values
@@ -60,7 +80,14 @@ public sealed class SteamLibraryDiscoveryService
                     continue;
                 }
 
-                var manifest = TryReadVdf(manifestPath);
+                var manifest = TryReadVdf(manifestPath, budget);
+                if (budget.IsExhausted)
+                {
+                    return discovered.Values
+                        .OrderBy(game => game.Name, StringComparer.OrdinalIgnoreCase)
+                        .ToArray();
+                }
+
                 if (manifest is null)
                 {
                     continue;
@@ -74,7 +101,11 @@ public sealed class SteamLibraryDiscoveryService
                 if (!uint.TryParse(appIdText, NumberStyles.None, CultureInfo.InvariantCulture, out var appId) ||
                     appId == 0 ||
                     string.IsNullOrWhiteSpace(name) ||
-                    string.IsNullOrWhiteSpace(installDirectoryName))
+                    string.IsNullOrWhiteSpace(installDirectoryName) ||
+                    Path.IsPathFullyQualified(installDirectoryName) ||
+                    installDirectoryName.Contains(Path.DirectorySeparatorChar) ||
+                    installDirectoryName.Contains(Path.AltDirectorySeparatorChar) ||
+                    installDirectoryName is "." or "..")
                 {
                     continue;
                 }
@@ -90,7 +121,6 @@ public sealed class SteamLibraryDiscoveryService
 
                 try
                 {
-                    var commonDirectory = Path.GetFullPath(Path.Combine(steamAppsDirectory, "common"));
                     var installDirectory = Path.GetFullPath(Path.Combine(commonDirectory, installDirectoryName));
                     if (!IsChildPath(installDirectory, commonDirectory) || !Directory.Exists(installDirectory))
                     {
@@ -98,7 +128,9 @@ public sealed class SteamLibraryDiscoveryService
                     }
 
                     var installAttributes = TryGetAttributes(installDirectory);
-                    if (installAttributes is null || (installAttributes.Value & FileAttributes.Directory) == 0)
+                    if (installAttributes is null ||
+                        (installAttributes.Value & FileAttributes.Directory) == 0 ||
+                        (installAttributes.Value & FileAttributes.ReparsePoint) != 0)
                     {
                         continue;
                     }
@@ -119,13 +151,13 @@ public sealed class SteamLibraryDiscoveryService
             .ToArray();
     }
 
-    private static IReadOnlyList<string> ResolveSteamLibraries(IEnumerable<string> steamInstallRoots)
+    private static IReadOnlyList<string> ResolveSteamLibraries(IEnumerable<string> steamInstallRoots, ScanBudget budget)
     {
         var pending = new Queue<string>(steamInstallRoots.Where(path => !string.IsNullOrWhiteSpace(path)));
         var libraries = new List<string>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        while (pending.Count > 0 && libraries.Count < MaximumLibraries)
+        while (pending.Count > 0 && libraries.Count < MaximumLibraries && !budget.IsExhausted)
         {
             var candidate = pending.Dequeue();
             string fullPath;
@@ -158,7 +190,7 @@ public sealed class SteamLibraryDiscoveryService
             libraries.Add(fullPath);
 
             var libraryFoldersPath = Path.Combine(steamAppsDirectory, "libraryfolders.vdf");
-            var libraryFolders = TryReadVdf(libraryFoldersPath);
+            var libraryFolders = TryReadVdf(libraryFoldersPath, budget);
             if (libraryFolders is null)
             {
                 continue;
@@ -242,13 +274,17 @@ public sealed class SteamLibraryDiscoveryService
         }
     }
 
-    private static Dictionary<string, object?>? TryReadVdf(string path)
+    private static Dictionary<string, object?>? TryReadVdf(string path, ScanBudget budget)
     {
         try
         {
             var info = new FileInfo(path);
-            if (!info.Exists || info.Length > MaximumVdfBytes ||
-                (File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0)
+            if (!info.Exists || (File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0)
+            {
+                return null;
+            }
+
+            if (!budget.TryConsumeFile(info.Length) || info.Length > MaximumVdfBytes)
             {
                 return null;
             }
@@ -319,6 +355,42 @@ public sealed class SteamLibraryDiscoveryService
                     yield return nestedValue;
                 }
             }
+        }
+    }
+
+    private sealed class ScanBudget
+    {
+        private int _manifestCandidatesScanned;
+        private int _vdfFilesRead;
+        private long _vdfBytesRead;
+
+        public bool IsExhausted { get; private set; }
+
+        public bool TryConsumeManifestCandidate()
+        {
+            if (_manifestCandidatesScanned >= MaximumManifestCandidatesScanned)
+            {
+                IsExhausted = true;
+                return false;
+            }
+
+            _manifestCandidatesScanned++;
+            return true;
+        }
+
+        public bool TryConsumeFile(long fileLength)
+        {
+            if (_vdfFilesRead >= MaximumVdfFilesRead ||
+                fileLength < 0 ||
+                fileLength > MaximumTotalVdfBytes - _vdfBytesRead)
+            {
+                IsExhausted = true;
+                return false;
+            }
+
+            _vdfFilesRead++;
+            _vdfBytesRead += fileLength;
+            return true;
         }
     }
 
