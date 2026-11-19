@@ -57,7 +57,7 @@ The output is NightLauncher.exe in the publish folder. It does not require a sep
 
     dotnet run --project tests/NightLauncher.SmokeTests/NightLauncher.SmokeTests.csproj -c Release
 
-The Windows smoke suite covers library persistence, JSON import/export, legacy library compatibility, Steam URI generation, backup/restore/retention, selected-folder discovery limits, launch-target validation, and WPF window/XAML initialization. The Windows workflow also checks NuGet packages for known vulnerabilities before creating the installer and release artifacts.
+The Windows smoke suite covers library persistence, JSON import/export, legacy library compatibility, Steam URI generation, backup/restore/retention, custom backup preference persistence, malformed settings/library files, storage failures, selected-folder discovery limits, launch-target validation, and WPF recovery-list initialization. The Windows workflow also checks NuGet packages for known vulnerabilities before creating the installer and release artifacts.
 
 ## Add a direct executable game
 
@@ -73,11 +73,11 @@ The library is stored at:
 
     %LocalAppData%\NightLauncher\library.json
 
-Rolling backups are stored at:
+The default backup location is:
 
     %LocalAppData%\NightLauncher\backups
 
-NightLauncher creates a backup before each change to an existing library and retains the 20 newest copies in the selected backup folder. You can choose a different folder (including a removable or external drive), create an additional backup, and select any listed recovery point from **Settings & privacy**. Changing the folder does not move or delete backups already stored in the previous location. Restoring validates the file, first preserves the current library, and requires one-time confirmation before restored launch targets can run. Logs are stored locally under `%LocalAppData%\NightLauncher\logs` and rotated to bounded files. Export an additional backup to an external drive before reinstalling Windows or deleting the application data folder.
+You can choose another local or external folder in **Settings & privacy**. NightLauncher remembers the chosen folder in its local `settings.json` preference file. NightLauncher creates a backup before each change to an existing library and retains the 20 newest copies in the selected backup folder. You can choose a different folder (including a removable or external drive), create an additional backup, and select any listed recovery point from **Settings & privacy**. Changing the folder does not move or delete backups already stored in the previous location. Restoring validates the file, first preserves the current library, and requires one-time confirmation before restored launch targets can run. Logs are stored locally under `%LocalAppData%\NightLauncher\logs` and rotated to bounded files. Export an additional backup to an external drive before reinstalling Windows or deleting the application data folder.
 
 ## Security model
 
