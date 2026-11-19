@@ -110,7 +110,8 @@ public partial class AddGameWindow : Window
                 Category = _original?.Category ?? "PC Game",
                 AddedUtc = _original?.AddedUtc ?? DateTimeOffset.UtcNow,
                 LastLaunchedUtc = _original?.LastLaunchedUtc,
-                NeedsLaunchConfirmation = _original?.NeedsLaunchConfirmation ?? false
+                NeedsLaunchConfirmation = _original?.NeedsLaunchConfirmation ?? false,
+                IsFavorite = _original?.IsFavorite ?? false
             };
 
             DialogResult = true;
@@ -153,7 +154,8 @@ public partial class AddGameWindow : Window
             Category = _original?.Category ?? "PC Game",
             AddedUtc = _original?.AddedUtc ?? DateTimeOffset.UtcNow,
             LastLaunchedUtc = _original?.LastLaunchedUtc,
-            NeedsLaunchConfirmation = _original?.NeedsLaunchConfirmation ?? false
+            NeedsLaunchConfirmation = _original?.NeedsLaunchConfirmation ?? false,
+                IsFavorite = _original?.IsFavorite ?? false
         };
 
         DialogResult = true;
