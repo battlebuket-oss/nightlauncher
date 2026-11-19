@@ -3,9 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Game details"
         Width="650"
-        Height="570"
+        Height="630"
         MinWidth="560"
-        MinHeight="530"
+        MinHeight="590"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize"
         Background="#0B1020"
@@ -26,6 +26,10 @@
         <StackPanel Grid.Row="1">
             <TextBlock Text="Display name" Foreground="#CBD5E1" Margin="0,0,0,7"/>
             <TextBox x:Name="NameTextBox" Margin="0,0,0,15" MaxLength="120"/>
+
+            <TextBlock Text="Category" Foreground="#CBD5E1" Margin="0,0,0,7"/>
+            <TextBox x:Name="CategoryTextBox" Margin="0,0,0,15" MaxLength="80"
+                     AutomationProperties.Name="Game category" ToolTip="Examples: Action, RPG, Racing, Strategy"/>
 
             <TextBlock Text="Launch method" Foreground="#CBD5E1" Margin="0,0,0,7"/>
             <ComboBox x:Name="LaunchModeCombo" Margin="0,0,0,15" SelectionChanged="LaunchMode_SelectionChanged">
