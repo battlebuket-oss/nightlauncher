@@ -415,8 +415,60 @@ public partial class MainWindow : Window
 
         if (discovered.Count == 0)
         {
+            var chooseFolder = MessageBox.Show(this,
+                "NightLauncher could not find an installed Steam game automatically. Would you like to select a Steam installation or library folder manually?",
+                "Steam folder not detected", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+            if (chooseFolder == MessageBoxResult.Yes)
+            {
+                var folderDialog = new OpenFolderDialog
+                {
+                    Title = "Select a Steam installation or library folder (the folder containing steamapps)",
+                    Multiselect = false
+                };
+
+                if (folderDialog.ShowDialog(this) == true)
+                {
+                    var selectedRoot = folderDialog.FolderName;
+                    var selectedName = Path.GetFileName(Path.TrimEndingDirectorySeparator(selectedRoot));
+                    if (string.Equals(selectedName, "steamapps", StringComparison.OrdinalIgnoreCase))
+                    {
+                        selectedRoot = Directory.GetParent(selectedRoot)?.FullName ?? selectedRoot;
+                    }
+                    else if (string.Equals(selectedName, "common", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var steamApps = Directory.GetParent(selectedRoot);
+                        if (steamApps is not null &&
+                            string.Equals(steamApps.Name, "steamapps", StringComparison.OrdinalIgnoreCase))
+                        {
+                            selectedRoot = steamApps.Parent?.FullName ?? selectedRoot;
+                        }
+                    }
+
+                    try
+                    {
+                        System.Windows.Input.Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+                        discovered = _steamDiscovery.DiscoverInstalledGames([selectedRoot]);
+                    }
+                    catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or
+                                                       InvalidDataException or SecurityException or ArgumentException)
+                    {
+                        MessageBox.Show(this, $"NightLauncher could not scan that Steam folder.\n\n{exception.Message}",
+                            "Steam library scan failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+                    finally
+                    {
+                        System.Windows.Input.Mouse.OverrideCursor = null;
+                    }
+                }
+            }
+        }
+
+        if (discovered.Count == 0)
+        {
             MessageBox.Show(this,
-                "No installed Steam games were found. Check that Steam is installed and its library folders are available.",
+                "No installed Steam games were found. You can scan again and choose a different Steam installation or library folder.",
                 "No installed Steam games found", MessageBoxButton.OK, MessageBoxImage.Information);
             SetStatus("Steam scan complete · no installed games found");
             return;
