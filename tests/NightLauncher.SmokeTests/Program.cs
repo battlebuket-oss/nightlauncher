@@ -25,18 +25,51 @@ try
         Category = "Test"
     };
 
-    service.Save([game]);
+    var steamGame = new GameEntry
+    {
+        Name = "Example Steam Game",
+        LaunchMode = "Steam",
+        SteamAppId = "271590",
+        Category = "Steam"
+    };
+
+    service.Save([game, steamGame]);
     var loaded = service.Load();
-    Assert(loaded.Count == 1, "library save/load should preserve the item count");
+    Assert(loaded.Count == 2, "library save/load should preserve both executable and Steam entries");
     Assert(loaded[0].Name == game.Name, "library save/load should preserve the game name");
     Assert(loaded[0].ExecutablePath == game.ExecutablePath, "library save/load should preserve the executable path");
+    Assert(loaded[1].LaunchMode == "Steam", "library save/load should preserve the Steam launch mode");
+    Assert(loaded[1].SteamAppId == "271590", "library save/load should preserve the Steam App ID");
 
     var exportPath = Path.Combine(root, "backup.json");
     service.Export(exportPath, loaded);
     var imported = service.Import(exportPath);
-    Assert(imported.Count == 1, "JSON export/import should preserve the item count");
-    Assert(imported[0].Name == game.Name, "JSON export/import should preserve the game name");
-    Assert(imported[0].NeedsLaunchConfirmation, "imported games should require a one-time executable review");
+    Assert(imported.Count == 2, "JSON export/import should preserve both launch modes");
+    Assert(imported[0].NeedsLaunchConfirmation, "imported executable entries should require a one-time review");
+    Assert(imported[1].NeedsLaunchConfirmation, "imported Steam entries should require a one-time review");
+    Assert(imported[1].LaunchMode == "Steam" && imported[1].SteamAppId == "271590",
+        "JSON export/import should preserve Steam launch metadata");
+
+    var steamUri = GameLauncher.CreateSteamLaunchUri("271590");
+    Assert(steamUri.Scheme == "steam", "Steam launch URI should use the official steam protocol");
+    Assert(steamUri.AbsoluteUri == "steam://rungameid/271590", "Steam launch URI should target the requested App ID");
+
+    var rejectedInvalidSteamId = false;
+    try
+    {
+        service.Save([new GameEntry
+        {
+            Name = "Invalid Steam Entry",
+            LaunchMode = "Steam",
+            SteamAppId = "../not-an-app-id"
+        }]);
+    }
+    catch (InvalidDataException)
+    {
+        rejectedInvalidSteamId = true;
+    }
+
+    Assert(rejectedInvalidSteamId, "library validation must reject malformed Steam App IDs");
 
     var missingResult = new GameLauncher().Launch(new GameEntry
     {
