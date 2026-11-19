@@ -261,7 +261,7 @@ public partial class MainWindow : Window
             MessageBox.Show(this, "Your library backup was exported successfully.",
                 "Export complete", MessageBoxButton.OK, MessageBoxImage.Information);
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidDataException)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             MessageBox.Show(this, exception.Message, "Export failed",
                 MessageBoxButton.OK, MessageBoxImage.Error);
@@ -317,7 +317,7 @@ public partial class MainWindow : Window
         {
             _library.Save(_games);
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidDataException)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             MessageBox.Show(this, $"Your change could not be saved.\n\n{exception.Message}",
                 "Library save failed", MessageBoxButton.OK, MessageBoxImage.Error);
