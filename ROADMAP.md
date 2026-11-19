@@ -6,22 +6,24 @@
 - [x] Direct executable launching and official Steam protocol hand-off
 - [x] JSON import/export with validation and imported-entry confirmation
 - [x] Backward-compatible loading of pre-1.1.0 library files
+- [x] Bounded discovery in a folder explicitly selected by the user
+- [x] Manual candidate selection before adding discovered executables; discovered entries require first-launch confirmation
 - [x] Automatic pre-change local backups with 20-copy retention
 - [x] Manual backup creation and validated restore with a pre-restore safety copy
 - [x] Local log rotation
 - [x] Per-user Windows installer and uninstaller definition
 - [x] CI packaging for EXE, portable ZIP, and installer
 - [x] Optional Authenticode signing support in CI (certificate configuration remains external)
-- [x] Expanded smoke tests for Steam URI validation, legacy data, backup/restore, retention, and invalid restore paths
+- [x] Expanded smoke tests for Steam URI validation, legacy data, backup/restore, retention, discovery limits, and invalid restore paths
+- [x] WPF XAML/window initialization checks on an STA thread in Windows CI
 - [x] NuGet vulnerability check in Windows CI
 
 ## Remaining release hardening
 - [ ] Configure a trusted publisher Authenticode certificate in repository secrets and verify signed artifacts
 - [ ] Run the installer and uninstaller on a clean Windows 10 VM and a clean Windows 11 VM; confirm user data is preserved
-- [ ] Add interactive UI automation on a desktop-capable Windows runner
 - [ ] Complete manual keyboard navigation, screen-reader, and high-contrast testing
-- [ ] Add optional game discovery limited to a folder explicitly selected by the user; require manual selection before adding any executable
-- [ ] Add user-selectable backup location and backup restore point picker
+- [ ] Add UI automation that interacts with the live app window on an interactive desktop runner
+- [ ] Add user-selectable backup location and a restore-point picker
 - [ ] Add broader malformed-library and disk-failure tests
 - [ ] Perform final code review and release signing verification
 
