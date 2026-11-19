@@ -27,7 +27,7 @@ public sealed class GameEntry
 
             return words.Length == 1
                 ? words[0][..Math.Min(2, words[0].Length)].ToUpperInvariant()
-                : string.Concat(words.Take(2).Select(word => word[0])).ToUpperInvariant();
+                : new string(words.Take(2).Select(word => word[0]).ToArray()).ToUpperInvariant();
         }
     }
 
