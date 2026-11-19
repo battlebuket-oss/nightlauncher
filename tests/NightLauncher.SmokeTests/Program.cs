@@ -45,8 +45,7 @@ try
     service.Export(exportPath, loaded);
     var imported = service.Import(exportPath);
     Assert(imported.Count == 2, "JSON export/import should preserve both launch modes");
-    Assert(imported[0].NeedsLaunchConfirmation, "imported executable entries should require a one-time review");
-    Assert(imported[1].NeedsLaunchConfirmation, "imported Steam entries should require a one-time review");
+    Assert(imported.All(item => item.NeedsLaunchConfirmation), "imported entries should require a one-time review");
     Assert(imported[1].LaunchMode == "Steam" && imported[1].SteamAppId == "271590",
         "JSON export/import should preserve Steam launch metadata");
 
@@ -54,7 +53,7 @@ try
     Assert(steamUri.Scheme == "steam", "Steam launch URI should use the official steam protocol");
     Assert(steamUri.AbsoluteUri == "steam://rungameid/271590", "Steam launch URI should target the requested App ID");
 
-    var rejectedInvalidSteamId = false;
+    var invalidSteamIdRejected = false;
     try
     {
         service.Save([new GameEntry
@@ -66,10 +65,31 @@ try
     }
     catch (InvalidDataException)
     {
-        rejectedInvalidSteamId = true;
+        invalidSteamIdRejected = true;
     }
 
-    Assert(rejectedInvalidSteamId, "library validation must reject malformed Steam App IDs");
+    Assert(invalidSteamIdRejected, "library validation must reject malformed Steam App IDs");
+
+    var legacyStorage = Path.Combine(root, "legacy");
+    Directory.CreateDirectory(legacyStorage);
+    var legacyEntry = new
+    {
+        Id = Guid.NewGuid(),
+        Name = "Legacy Executable Entry",
+        ExecutablePath = Path.Combine(root, "LegacyGame.exe"),
+        LaunchArguments = string.Empty,
+        WorkingDirectory = root,
+        Category = "PC Game",
+        AddedUtc = DateTimeOffset.UtcNow,
+        LastLaunchedUtc = (DateTimeOffset?)null,
+        NeedsLaunchConfirmation = false
+    };
+    File.WriteAllText(
+        Path.Combine(legacyStorage, "library.json"),
+        System.Text.Json.JsonSerializer.Serialize(new[] { legacyEntry }));
+    var legacyLoaded = new GameLibraryService(legacyStorage).Load();
+    Assert(legacyLoaded.Count == 1 && legacyLoaded[0].LaunchMode == "Executable",
+        "libraries created before 1.1.0 should default to direct executable mode");
 
     var missingResult = new GameLauncher().Launch(new GameEntry
     {
