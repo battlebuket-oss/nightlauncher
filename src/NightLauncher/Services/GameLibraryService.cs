@@ -159,19 +159,20 @@ public sealed class GameLibraryService
                 throw new InvalidDataException("The library contains an empty game entry.");
             }
 
-            if (assignMissingIds && (game.Id == Guid.Empty || !ids.Add(game.Id)))
+            if (assignMissingIds)
             {
-                game.Id = Guid.NewGuid();
-                ids.Add(game.Id);
+                if (game.Id == Guid.Empty || !ids.Add(game.Id))
+                {
+                    do
+                    {
+                        game.Id = Guid.NewGuid();
+                    }
+                    while (!ids.Add(game.Id));
+                }
             }
-            else if (!ids.Add(game.Id))
+            else if (game.Id == Guid.Empty || !ids.Add(game.Id))
             {
-                throw new InvalidDataException("The library contains duplicate game identifiers.");
-            }
-
-            if (game.Id == Guid.Empty)
-            {
-                throw new InvalidDataException("A game entry is missing its identifier.");
+                throw new InvalidDataException("The library contains a missing or duplicate game identifier.");
             }
 
             game.LaunchArguments ??= string.Empty;
