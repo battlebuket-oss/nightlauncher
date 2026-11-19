@@ -12,7 +12,8 @@ This checklist separates CI-verifiable checks from tests that require a real int
 - [ ] Inno Setup creates the per-user installer.
 - [x] CI installs the generated setup EXE as a standard user, verifies the application and shortcut, uninstalls it, and confirms library/settings/backups remain intact.
 - [ ] Portable ZIP and installer are uploaded as release assets.
-- [ ] If a publisher certificate is configured, Authenticode signatures verify for both EXE and installer.
+- [ ] A versioned release tag is rejected when no trusted signing certificate is configured.
+- [ ] For a signed versioned release, Authenticode signatures verify for both EXE and installer.
 
 ## Interactive Windows 10 and Windows 11 checks
 
