@@ -3,9 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Game details"
         Width="650"
-        Height="510"
+        Height="570"
         MinWidth="560"
-        MinHeight="470"
+        MinHeight="530"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize"
         Background="#0B1020"
@@ -19,35 +19,46 @@
 
         <StackPanel Grid.Row="0" Margin="0,0,0,22">
             <TextBlock x:Name="HeadingText" Text="Add a game" FontSize="25" FontWeight="Bold"/>
-            <TextBlock Text="Choose the executable you are allowed to run. Platform ownership and authentication are still handled by the game publisher."
+            <TextBlock Text="Choose an executable or send the game to the official Steam client. Steam and publisher ownership checks remain enabled."
                        Foreground="#94A3B8" TextWrapping="Wrap" Margin="0,7,0,0"/>
         </StackPanel>
 
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
+        <StackPanel Grid.Row="1">
+            <TextBlock Text="Display name" Foreground="#CBD5E1" Margin="0,0,0,7"/>
+            <TextBox x:Name="NameTextBox" Margin="0,0,0,15" MaxLength="120"/>
 
-            <TextBlock Grid.Row="0" Text="Display name" Foreground="#CBD5E1" Margin="0,0,0,7"/>
-            <TextBox x:Name="NameTextBox" Grid.Row="1" Margin="0,0,0,15" MaxLength="120"/>
+            <TextBlock Text="Launch method" Foreground="#CBD5E1" Margin="0,0,0,7"/>
+            <ComboBox x:Name="LaunchModeCombo" Margin="0,0,0,15" SelectionChanged="LaunchMode_SelectionChanged">
+                <ComboBoxItem Content="Direct executable" Tag="Executable"/>
+                <ComboBoxItem Content="Official Steam client" Tag="Steam"/>
+            </ComboBox>
 
-            <TextBlock Grid.Row="2" Text="Game executable (.exe)" Foreground="#CBD5E1" Margin="0,0,0,7"/>
-            <TextBox x:Name="ExecutableTextBox" Grid.Row="3" Margin="0,0,10,15" Grid.Column="0"/>
-            <Button Grid.Row="3" Grid.Column="1" Content="Browse…" Click="Browse_Click" VerticalAlignment="Top"/>
+            <StackPanel x:Name="ExecutablePanel">
+                <TextBlock Text="Game executable (.exe)" Foreground="#CBD5E1" Margin="0,0,0,7"/>
+                <Grid Margin="0,0,0,15">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="ExecutableTextBox" Margin="0,0,10,0"/>
+                    <Button Grid.Column="1" Content="Browse…" Click="Browse_Click" VerticalAlignment="Top"/>
+                </Grid>
+            </StackPanel>
 
-            <TextBlock Grid.Row="4" Text="Launch arguments (optional)" Foreground="#CBD5E1" Margin="0,0,0,7"/>
-            <TextBox x:Name="ArgumentsTextBox" Grid.Row="5" Height="70"
-                     VerticalContentAlignment="Top" AcceptsReturn="True" TextWrapping="Wrap" MaxLength="4096"/>
-        </Grid>
+            <StackPanel x:Name="SteamPanel" Visibility="Collapsed">
+                <TextBlock Text="Steam App ID" Foreground="#CBD5E1" Margin="0,0,0,7"/>
+                <TextBox x:Name="SteamAppIdTextBox" Margin="0,0,0,15" MaxLength="10"
+                         ToolTip="Numeric App ID. Steam performs the normal ownership and authentication checks."/>
+                <TextBlock Text="Example: GTA V Legacy uses Steam App ID 271590. This only asks Steam to launch the game; it does not grant ownership."
+                           Foreground="#94A3B8" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,15"/>
+            </StackPanel>
+
+            <StackPanel x:Name="ArgumentsPanel">
+                <TextBlock Text="Launch arguments (optional)" Foreground="#CBD5E1" Margin="0,0,0,7"/>
+                <TextBox x:Name="ArgumentsTextBox" Height="70"
+                         VerticalContentAlignment="Top" AcceptsReturn="True" TextWrapping="Wrap" MaxLength="4096"/>
+            </StackPanel>
+        </StackPanel>
 
         <Grid Grid.Row="2" Margin="0,18,0,0">
             <Grid.ColumnDefinitions>
