@@ -181,6 +181,7 @@ internal static class Program
             Assert(backupService.GetBackups().Count <= 3, "backup retention should keep no more than the configured maximum");
 
             var settingsDirectory = Path.Combine(root, "configuration");
+            Directory.CreateDirectory(settingsDirectory);
             var settingsPath = Path.Combine(settingsDirectory, "settings.json");
             var settingsService = new NightLauncherSettingsService(settingsPath);
             Assert(settingsService.LoadBackupDirectory() is null, "a new settings file should use the default backup directory");
