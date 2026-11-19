@@ -12,8 +12,11 @@
 - Steam entries are handed to the official Steam client using its registered `steam://rungameid/<appid>` protocol.
 - Optional launch arguments for direct executable entries.
 - Search and browse a local game library.
+- Scan only a folder explicitly selected by the user (bounded to four directory levels and 500 candidates by default); discovered executables are never auto-added or launched.
 - Import and export the library as JSON.
 - Local-only storage under the user's Local AppData folder.
+- Automatic pre-change backups with a rolling retention limit of 20 copies.
+- Manual backup and restore controls in Settings; restore validates the file and marks launch targets for confirmation.
 - Backward-compatible loading of library files created before Steam launch support.
 - Imported entries require a one-time confirmation before launch.
 - No telemetry, cloud account, credential collection, game-file patching, DLL injection, process-memory access, or automatic network calls.
@@ -27,13 +30,15 @@
 
 For example, the Steam App ID for GTA V Legacy is `271590`. NightLauncher sends that ID to the Steam client. Steam performs its normal sign-in, entitlement and launch checks; NightLauncher cannot skip them or make an unlicensed installation playable. For games purchased through Steam that also use a publisher launcher, the publisher's normal authentication flow remains in effect.
 
-## Download
+## Download and installation
 
-After the main-branch Windows build and smoke tests pass, the workflow publishes an unsigned CI prerelease under **Releases** and uploads a downloadable executable and portable ZIP. The Actions run also retains the build artifact for 30 days.
+After the Windows build, smoke tests, vulnerability check, and packaging steps pass, the workflow publishes a CI prerelease containing the self-contained executable, portable ZIP, and per-user Windows installer. The Actions run also retains the artifacts for 30 days.
 
-For a stable, versioned GitHub Release, push a tag such as `v1.1.0`; the workflow will attach the executable and ZIP to that release.
+For a stable, versioned GitHub Release, push a tag such as `v1.2.0`; the workflow will attach the executable, portable ZIP, and installer.
 
-The executable is unsigned. Windows SmartScreen may show an unknown-publisher warning. Only download builds from this repository, and review the source before running it.
+The release pipeline supports optional Authenticode signing. To enable it, repository administrators must configure the GitHub Actions secrets `WINDOWS_SIGNING_CERTIFICATE_BASE64` (a base64-encoded PFX file) and `WINDOWS_SIGNING_CERTIFICATE_PASSWORD`. Without both secrets, CI explicitly publishes unsigned binaries; Windows SmartScreen may show an unknown-publisher warning. Only download builds from this repository, and review the source before running it.
+
+The Inno Setup installer installs per-user under `%LocalAppData%\\Programs\\NightLauncher`, adds a Start Menu shortcut, and optionally adds a desktop shortcut. Uninstalling the application intentionally leaves the local library and backups untouched.
 
 ## Run from source
 
@@ -52,7 +57,7 @@ The output is NightLauncher.exe in the publish folder. It does not require a sep
 
     dotnet run --project tests/NightLauncher.SmokeTests/NightLauncher.SmokeTests.csproj -c Release
 
-The smoke tests cover library persistence, JSON import/export, legacy library compatibility, Steam URI generation and launch-target validation. The Windows workflow runs them before publishing.
+The Windows smoke suite covers library persistence, JSON import/export, legacy library compatibility, Steam URI generation, backup/restore/retention, selected-folder discovery limits, launch-target validation, and WPF window/XAML initialization. The Windows workflow also checks NuGet packages for known vulnerabilities before creating the installer and release artifacts.
 
 ## Add a direct executable game
 
@@ -62,13 +67,17 @@ The smoke tests cover library persistence, JSON import/export, legacy library co
 4. Optionally add launch arguments. Leave them blank unless the game's official documentation requires them.
 5. Save, select the game in the library, and press **Launch**.
 
-## Local data and privacy
+## Local data, backups and privacy
 
 The library is stored at:
 
     %LocalAppData%\NightLauncher\library.json
 
-Settings and logs are also local. Export a JSON backup before reinstalling Windows or deleting the application data folder. Imported JSON is validated before it is added to the library.
+Rolling backups are stored at:
+
+    %LocalAppData%\NightLauncher\backups
+
+NightLauncher creates a backup before each change to an existing library and retains the 20 newest copies. You can create an additional backup or restore the newest backup from **Settings & privacy**. Restoring validates the file, first preserves the current library, and requires one-time confirmation before restored launch targets can run. Logs are stored locally under `%LocalAppData%\NightLauncher\logs` and rotated to bounded files. Export an additional backup to an external drive before reinstalling Windows or deleting the application data folder.
 
 ## Security model
 
@@ -76,4 +85,4 @@ NightLauncher starts only the executable path explicitly selected by the user or
 
 ## Project status
 
-Version 1.1.0 adds official Steam client hand-off. This is a production-oriented development build, not a signed or fully production-certified release. See [ROADMAP.md](ROADMAP.md) for remaining release work. GitHub Actions is the source of truth for Windows build and smoke-test results.
+Version 1.2.0 adds local recovery backups, restore controls, bounded logs, a per-user installer, optional Authenticode signing, and an expanded Windows packaging pipeline. It is still a development release until signing is configured and compatibility/UI checks are completed on real Windows 10 and Windows 11 user sessions. See [ROADMAP.md](ROADMAP.md) for remaining release work. GitHub Actions is the source of truth for build, smoke-test, vulnerability-check, and packaging results.

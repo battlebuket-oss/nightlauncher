@@ -1,0 +1,29 @@
+# Release validation checklist
+
+This checklist separates CI-verifiable checks from tests that require a real interactive Windows session.
+
+## GitHub Actions checks
+
+- [ ] Windows x64 Release build succeeds.
+- [ ] Smoke tests pass (library persistence, Steam URI, backup/restore, retention, discovery limits, invalid inputs).
+- [ ] WPF windows initialize and compiled XAML fields resolve on an STA thread.
+- [ ] NuGet vulnerability report is reviewed.
+- [ ] Self-contained EXE publishes.
+- [ ] Inno Setup creates the per-user installer.
+- [ ] Portable ZIP and installer are uploaded as release assets.
+- [ ] If a publisher certificate is configured, Authenticode signatures verify for both EXE and installer.
+
+## Interactive Windows 10 and Windows 11 checks
+
+- [ ] Install as a standard user without administrator elevation.
+- [ ] Launch from Start Menu shortcut and optional desktop shortcut.
+- [ ] Add, edit, remove, search, import, and export game entries.
+- [ ] Add a Steam App ID and confirm the request opens the official Steam client.
+- [ ] Scan a user-selected folder, select candidate executables, and verify no file is launched during discovery.
+- [ ] Confirm discovered/imported entries require a one-time trust review before launching.
+- [ ] Create a backup, make a library change, and restore the previous backup.
+- [ ] Confirm restoring creates a safety backup of the current library.
+- [ ] Uninstall and confirm the user's library, backups, and logs remain intact.
+- [ ] Verify keyboard navigation, high contrast, scaling, and screen-reader labels.
+
+The GitHub-hosted Windows runner can validate compilation, service tests, XAML initialization, and packaging. It does not substitute for these interactive desktop checks on physical or virtual Windows installations.

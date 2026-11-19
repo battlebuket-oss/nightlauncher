@@ -6,6 +6,9 @@ namespace NightLauncher;
 
 public partial class App : Application
 {
+    private const long MaximumLogBytes = 2 * 1024 * 1024;
+    private const int RetainedLogFiles = 3;
+
     protected override void OnStartup(StartupEventArgs e)
     {
         DispatcherUnhandledException += OnDispatcherUnhandledException;
@@ -43,6 +46,20 @@ public partial class App : Application
                 "logs");
             Directory.CreateDirectory(folder);
             var path = Path.Combine(folder, "latest.log");
+
+            if (File.Exists(path) && new FileInfo(path).Length >= MaximumLogBytes)
+            {
+                for (var index = RetainedLogFiles; index >= 1; index--)
+                {
+                    var source = index == 1 ? path : Path.Combine(folder, $"latest.{index - 1}.log");
+                    var destination = Path.Combine(folder, $"latest.{index}.log");
+                    if (File.Exists(source))
+                    {
+                        File.Move(source, destination, overwrite: true);
+                    }
+                }
+            }
+
             File.AppendAllText(path, $"[{DateTimeOffset.Now:O}] {exception}{Environment.NewLine}{Environment.NewLine}");
         }
         catch

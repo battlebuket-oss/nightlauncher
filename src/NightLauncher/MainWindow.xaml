@@ -43,6 +43,7 @@
                     <Button Content="＋   Add a game" HorizontalContentAlignment="Left" Style="{StaticResource QuietButtonStyle}" Click="AddGame_Click"/>
                     <Button Content="⇧   Import library" HorizontalContentAlignment="Left" Style="{StaticResource QuietButtonStyle}" Click="Import_Click"/>
                     <Button Content="⇩   Export library" HorizontalContentAlignment="Left" Style="{StaticResource QuietButtonStyle}" Click="Export_Click"/>
+                    <Button Content="⌕   Find games in folder" HorizontalContentAlignment="Left" Style="{StaticResource QuietButtonStyle}" Click="DiscoverGames_Click"/>
                 </StackPanel>
 
                 <StackPanel DockPanel.Dock="Bottom">
@@ -54,7 +55,7 @@
                         </StackPanel>
                     </Border>
                     <Button Content="⚙   Settings &amp; privacy" HorizontalContentAlignment="Left" Style="{StaticResource QuietButtonStyle}" Click="Settings_Click"/>
-                    <TextBlock Text="NIGHTLAUNCHER  ·  1.1.0" Foreground="#475569" FontSize="9" Margin="4,14,0,0"/>
+                    <TextBlock Text="NIGHTLAUNCHER  ·  1.2.0" Foreground="#475569" FontSize="9" Margin="4,14,0,0"/>
                 </StackPanel>
             </DockPanel>
         </Border>

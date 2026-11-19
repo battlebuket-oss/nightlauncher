@@ -17,9 +17,9 @@ concurrency:
 
 jobs:
   build:
-    name: Build, smoke test and package (win-x64)
+    name: Build, test and package (win-x64)
     runs-on: windows-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - name: Check out source
@@ -39,6 +39,14 @@ jobs:
       - name: Run smoke tests
         run: dotnet run --project tests/NightLauncher.SmokeTests/NightLauncher.SmokeTests.csproj --configuration Release --no-build
 
+      - name: Check NuGet packages for known vulnerabilities
+        shell: pwsh
+        run: |
+          dotnet list src/NightLauncher/NightLauncher.csproj package --vulnerable --include-transitive
+          if ($LASTEXITCODE -ne 0) {
+            throw "NuGet vulnerability check failed."
+          }
+
       - name: Publish self-contained executable
         run: >-
           dotnet publish src/NightLauncher/NightLauncher.csproj
@@ -50,18 +58,109 @@ jobs:
           -p:IncludeNativeLibrariesForSelfExtract=true
           -p:EnableCompressionInSingleFile=true
 
-      - name: Verify executable and create portable ZIP
+      - name: Install Inno Setup
         shell: pwsh
         run: |
-          $exe = "artifacts/publish/NightLauncher.exe"
-          if (-not (Test-Path $exe)) {
-            throw "Publish did not produce NightLauncher.exe"
+          $programFiles = [Environment]::GetFolderPath("ProgramFiles")
+          $programFilesX86 = [Environment]::GetFolderPath("ProgramFilesX86")
+          $compilerPaths = @(
+            (Join-Path $programFilesX86 "Inno Setup 6\ISCC.exe"),
+            (Join-Path $programFiles "Inno Setup 6\ISCC.exe"),
+            (Join-Path $programFilesX86 "Inno Setup 7\ISCC.exe"),
+            (Join-Path $programFiles "Inno Setup 7\ISCC.exe")
+          )
+          $existingCompiler = $compilerPaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $existingCompiler) {
+            winget install --id JRSoftware.InnoSetup --exact --silent --accept-package-agreements --accept-source-agreements
+            if ($LASTEXITCODE -ne 0) {
+              throw "Inno Setup installation failed."
+            }
           }
-          if ((Get-Item $exe).Length -lt 1MB) {
-            throw "Published executable is unexpectedly small"
+
+      - name: Build installer, optionally sign, and package
+        shell: pwsh
+        env:
+          WINDOWS_SIGNING_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_BASE64 }}
+          WINDOWS_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_PASSWORD }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $programFiles = [Environment]::GetFolderPath("ProgramFiles")
+          $programFilesX86 = [Environment]::GetFolderPath("ProgramFilesX86")
+          $compilerPaths = @(
+            (Join-Path $programFilesX86 "Inno Setup 6\ISCC.exe"),
+            (Join-Path $programFiles "Inno Setup 6\ISCC.exe"),
+            (Join-Path $programFilesX86 "Inno Setup 7\ISCC.exe"),
+            (Join-Path $programFiles "Inno Setup 7\ISCC.exe")
+          )
+          $iscc = $compilerPaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $iscc) {
+            throw "ISCC.exe was not found after installing Inno Setup."
           }
+
+          $sourceDir = (Resolve-Path "artifacts/publish").Path
+          & $iscc "/DMyAppVersion=1.2.0" "/DSourceDir=$sourceDir" "installer/NightLauncher.iss"
+          if ($LASTEXITCODE -ne 0) {
+            throw "Inno Setup compilation failed."
+          }
+
+          $installer = "artifacts/NightLauncher-Setup-1.2.0.exe"
+          $application = "artifacts/publish/NightLauncher.exe"
+          if (-not (Test-Path $installer)) {
+            throw "Installer output was not created."
+          }
+
+          $hasCertificate = -not [string]::IsNullOrWhiteSpace($env:WINDOWS_SIGNING_CERTIFICATE_BASE64)
+          $hasPassword = -not [string]::IsNullOrWhiteSpace($env:WINDOWS_SIGNING_CERTIFICATE_PASSWORD)
+          if ($hasCertificate -xor $hasPassword) {
+            throw "Both WINDOWS_SIGNING_CERTIFICATE_BASE64 and WINDOWS_SIGNING_CERTIFICATE_PASSWORD must be configured together."
+          }
+
+          if ($hasCertificate) {
+            $pfxPath = Join-Path $env:RUNNER_TEMP "nightlauncher-signing.pfx"
+            try {
+              [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:WINDOWS_SIGNING_CERTIFICATE_BASE64))
+              $kitsPath = Join-Path $programFilesX86 "Windows Kits\10\bin"
+              $signtool = Get-ChildItem -Path $kitsPath -Filter "signtool.exe" -File -Recurse -ErrorAction SilentlyContinue |
+                Where-Object { $_.FullName -match "\\x64\\signtool.exe$" } |
+                Sort-Object FullName -Descending |
+                Select-Object -First 1
+              if (-not $signtool) {
+                throw "Windows SDK signtool.exe was not found."
+              }
+
+              foreach ($target in @($application, $installer)) {
+                & $signtool.FullName sign /fd SHA256 /td SHA256 /tr "https://timestamp.digicert.com" /f $pfxPath /p $env:WINDOWS_SIGNING_CERTIFICATE_PASSWORD $target
+                if ($LASTEXITCODE -ne 0) {
+                  throw "Authenticode signing failed for $target."
+                }
+                & $signtool.FullName verify /pa /all $target
+                if ($LASTEXITCODE -ne 0) {
+                  throw "Authenticode verification failed for $target."
+                }
+              }
+              "Authenticode signatures verified for executable and installer."
+            }
+            finally {
+              if (Test-Path $pfxPath) {
+                Remove-Item $pfxPath -Force
+              }
+            }
+          }
+          else {
+            Write-Warning "No signing certificate configured. The EXE and installer will be unsigned."
+          }
+
+          if ((Get-Item $application).Length -lt 1MB) {
+            throw "Published executable is unexpectedly small."
+          }
+          if ((Get-Item $installer).Length -lt 1MB) {
+            throw "Installer output is unexpectedly small."
+          }
+
           Compress-Archive -Path "artifacts/publish/*" -DestinationPath "artifacts/NightLauncher-win-x64.zip" -Force
-          Get-FileHash $exe -Algorithm SHA256 | Format-List
+          Get-FileHash $application -Algorithm SHA256 | Format-List
+          Get-FileHash $installer -Algorithm SHA256 | Format-List
+          Get-FileHash "artifacts/NightLauncher-win-x64.zip" -Algorithm SHA256 | Format-List
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
@@ -70,6 +169,7 @@ jobs:
           path: |
             artifacts/publish/NightLauncher.exe
             artifacts/NightLauncher-win-x64.zip
+            artifacts/NightLauncher-Setup-1.2.0.exe
           if-no-files-found: error
           retention-days: 30
 
@@ -80,11 +180,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ci-${{ github.run_number }}
         run: |
+          $assets = @(
+            "artifacts/publish/NightLauncher.exe",
+            "artifacts/NightLauncher-win-x64.zip",
+            "artifacts/NightLauncher-Setup-1.2.0.exe"
+          )
+          $notes = "Automated Windows build from main. Development prerelease. Authenticode signing is applied only when the repository signing-certificate secrets are configured."
           gh release view $env:RELEASE_TAG *> $null
           if ($LASTEXITCODE -eq 0) {
-            gh release upload $env:RELEASE_TAG "artifacts/publish/NightLauncher.exe" "artifacts/NightLauncher-win-x64.zip" --clobber
+            gh release upload $env:RELEASE_TAG $assets --clobber
           } else {
-            gh release create $env:RELEASE_TAG "artifacts/publish/NightLauncher.exe" "artifacts/NightLauncher-win-x64.zip" --title "NightLauncher CI build #${{ github.run_number }}" --notes "Automated Windows build from main. This is an unsigned development prerelease." --prerelease
+            gh release create $env:RELEASE_TAG $assets --title "NightLauncher CI build #${{ github.run_number }}" --notes $notes --prerelease
+          }
+          if ($LASTEXITCODE -ne 0) {
+            throw "GitHub prerelease publication failed."
           }
 
       - name: Publish versioned GitHub Release assets
@@ -94,9 +203,18 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
+          $assets = @(
+            "artifacts/publish/NightLauncher.exe",
+            "artifacts/NightLauncher-win-x64.zip",
+            "artifacts/NightLauncher-Setup-1.2.0.exe"
+          )
+          $notes = "NightLauncher release. See the repository README and SECURITY.md for launch, backup, and trust details. Authenticode signing is applied only when the repository signing-certificate secrets are configured."
           gh release view $env:RELEASE_TAG *> $null
           if ($LASTEXITCODE -eq 0) {
-            gh release upload $env:RELEASE_TAG "artifacts/publish/NightLauncher.exe" "artifacts/NightLauncher-win-x64.zip" --clobber
+            gh release upload $env:RELEASE_TAG $assets --clobber
           } else {
-            gh release create $env:RELEASE_TAG "artifacts/publish/NightLauncher.exe" "artifacts/NightLauncher-win-x64.zip" --title "NightLauncher $env:RELEASE_TAG" --generate-notes
+            gh release create $env:RELEASE_TAG $assets --title "NightLauncher $env:RELEASE_TAG" --notes $notes
+          }
+          if ($LASTEXITCODE -ne 0) {
+            throw "Versioned GitHub Release publication failed."
           }
