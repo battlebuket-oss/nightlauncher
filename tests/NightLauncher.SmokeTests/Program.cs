@@ -241,6 +241,19 @@ internal static class Program
             Assert(missingResult.Message.Contains("could not be found", StringComparison.OrdinalIgnoreCase),
                 "missing executable should produce a useful validation message");
 
+            var existingFixture = Path.Combine(root, "working-directory-validation.exe");
+            File.WriteAllText(existingFixture, "test fixture");
+            var relativeWorkingDirectoryResult = new GameLauncher().Launch(new GameEntry
+            {
+                Name = "Relative working directory",
+                ExecutablePath = existingFixture,
+                WorkingDirectory = "relative-folder"
+            });
+            Assert(!relativeWorkingDirectoryResult.Succeeded,
+                "launcher must reject a relative working directory before starting a process");
+            Assert(relativeWorkingDirectoryResult.Message.Contains("absolute path", StringComparison.OrdinalIgnoreCase),
+                "relative working directory should produce a clear corrective message");
+
             // Instantiate the WPF application and windows on an STA thread so CI also parses
             // the XAML resources, resolves event handlers, and creates the UI control trees.
             var app = new NightLauncher.App();
