@@ -20,6 +20,7 @@
 - User-selectable backup storage and a selectable recovery-point list in Settings; restore validates the selected file and marks launch targets for confirmation.
 - Backward-compatible loading of library files created before Steam launch support.
 - Imported entries require a one-time confirmation before launch.
+- Dependabot checks NuGet packages and GitHub Actions weekly and opens update pull requests.
 - No telemetry, cloud account, credential collection, game-file patching, DLL injection, process-memory access, or automatic network calls.
 
 ## Steam launch mode

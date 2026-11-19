@@ -22,6 +22,8 @@
 - [x] WPF XAML/window initialization checks on an STA thread in Windows CI
 - [x] NuGet vulnerability check in Windows CI
 
+- [x] Weekly Dependabot update checks for NuGet dependencies and GitHub Actions
+
 ## Remaining release hardening
 - [ ] Configure a trusted publisher Authenticode certificate in repository secrets and verify signed artifacts
 - [ ] Run the installer and uninstaller on a clean Windows 10 VM and a clean Windows 11 VM; confirm user data is preserved
