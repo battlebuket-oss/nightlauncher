@@ -12,6 +12,7 @@
 - Discover installed Steam games across the configured local Steam libraries by reading `libraryfolders.vdf` and `appmanifest_*.acf`; when automatic detection misses a portable or custom Steam install, select its library folder manually. Steam metadata parsing has per-file and total scan limits, uses bounded reads, rejects reparse-point folders and nested install paths, and never modifies Steam files. Newly discovered entries require a one-time review and launch through the official Steam client.
 - Steam entries are handed to the official Steam client using its registered `steam://rungameid/<appid>` protocol.
 - The details pane shows a detected install location and opens valid local game folders in Explorer; rescanning Steam refreshes existing names and install paths.
+- Keyboard shortcuts: Ctrl+F focuses search, Escape clears search, Enter launches the selected game, and Delete asks to remove the selected game.
 - Steam rescans refresh stored game names and install locations; the details pane shows a validated install folder and can open it in Windows Explorer.
 - Optional launch arguments for direct executable entries.
 - Search and browse a local game library.
