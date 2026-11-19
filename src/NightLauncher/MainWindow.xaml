@@ -157,6 +157,14 @@
                         <TextBlock Text="LAUNCH TARGET" Foreground="#64748B" FontSize="9" FontWeight="Bold"/>
                         <TextBlock x:Name="DetailPath" Text="Choose a game from your library to see its launch target."
                                    Foreground="#94A3B8" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,15"/>
+                        <StackPanel x:Name="InstallLocationPanel" Visibility="Collapsed" Margin="0,0,0,16">
+                            <TextBlock Text="INSTALL LOCATION" Foreground="#64748B" FontSize="9" FontWeight="Bold"/>
+                            <TextBlock x:Name="DetailInstallDirectory" Foreground="#94A3B8" FontSize="10"
+                                       TextWrapping="Wrap" Margin="0,6,0,8"/>
+                            <Button x:Name="OpenInstallFolderButton" Content="Open install folder"
+                                    Style="{StaticResource QuietButtonStyle}" IsEnabled="False"
+                                    Click="OpenInstallFolder_Click"/>
+                        </StackPanel>
                         <TextBlock Text="LAST LAUNCHED" Foreground="#64748B" FontSize="9" FontWeight="Bold"/>
                         <TextBlock x:Name="DetailLastLaunched" Text="Not launched yet" Foreground="#94A3B8" FontSize="11" Margin="0,6,0,22"/>
 
