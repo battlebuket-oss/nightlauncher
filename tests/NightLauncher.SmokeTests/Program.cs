@@ -40,6 +40,7 @@ internal static class Program
                 Name = "Example Steam Game",
                 LaunchMode = "Steam",
                 SteamAppId = "271590",
+                SteamInstallDirectory = Path.Combine(root, "Steam", "steamapps", "common", "Example Steam Game"),
                 Category = "Steam"
             };
 
@@ -50,6 +51,10 @@ internal static class Program
             Assert(loaded[0].ExecutablePath == game.ExecutablePath, "library save/load should preserve the executable path");
             Assert(loaded[1].LaunchMode == "Steam", "library save/load should preserve the Steam launch mode");
             Assert(loaded[1].SteamAppId == "271590", "library save/load should preserve the Steam App ID");
+            Assert(loaded[1].SteamInstallDirectory == steamGame.SteamInstallDirectory,
+                "library save/load should preserve the discovered Steam install directory");
+            Assert(steamGame.Copy().SteamInstallDirectory == steamGame.SteamInstallDirectory,
+                "game entry copies should preserve the Steam install directory");
 
             var exportPath = Path.Combine(root, "backup.json");
             service.Export(exportPath, loaded);
@@ -58,6 +63,8 @@ internal static class Program
             Assert(imported.All(item => item.NeedsLaunchConfirmation), "imported entries should require a one-time review");
             Assert(imported[1].LaunchMode == "Steam" && imported[1].SteamAppId == "271590",
                 "JSON export/import should preserve Steam launch metadata");
+            Assert(imported[1].SteamInstallDirectory == steamGame.SteamInstallDirectory,
+                "JSON export/import should preserve the Steam install directory");
 
             var steamUri = GameLauncher.CreateSteamLaunchUri("271590");
             Assert(steamUri.Scheme == "steam", "Steam launch URI should use the official steam protocol");
@@ -79,6 +86,25 @@ internal static class Program
             }
 
             Assert(invalidSteamIdRejected, "library validation must reject malformed Steam App IDs");
+
+            var invalidSteamInstallDirectoryRejected = false;
+            try
+            {
+                service.Save([new GameEntry
+                {
+                    Name = "Invalid Steam install path",
+                    LaunchMode = "Steam",
+                    SteamAppId = "271590",
+                    SteamInstallDirectory = "relative\\steam\\game"
+                }]);
+            }
+            catch (InvalidDataException)
+            {
+                invalidSteamInstallDirectoryRejected = true;
+            }
+
+            Assert(invalidSteamInstallDirectoryRejected,
+                "library validation must reject relative Steam install directories");
 
             var backupDirectory = Path.Combine(root, "backups");
             var backupService = new GameLibraryBackupService(service, backupDirectory, maximumBackups: 3);
@@ -230,6 +256,29 @@ internal static class Program
             var legacyLoaded = new GameLibraryService(legacyStorage).Load();
             Assert(legacyLoaded.Count == 1 && legacyLoaded[0].LaunchMode == "Executable",
                 "libraries created before 1.1.0 should default to direct executable mode");
+
+            Assert(legacyLoaded[0].SteamInstallDirectory == string.Empty,
+                "legacy executable entries should default to an empty Steam install directory");
+
+            var legacySteamStorage = Path.Combine(root, "legacy-steam");
+            Directory.CreateDirectory(legacySteamStorage);
+            var legacySteamEntry = new
+            {
+                Id = Guid.NewGuid(),
+                Name = "Legacy Steam Entry",
+                LaunchMode = "Steam",
+                SteamAppId = "271590",
+                Category = "Steam",
+                AddedUtc = DateTimeOffset.UtcNow,
+                LastLaunchedUtc = (DateTimeOffset?)null,
+                NeedsLaunchConfirmation = false
+            };
+            File.WriteAllText(
+                Path.Combine(legacySteamStorage, "library.json"),
+                System.Text.Json.JsonSerializer.Serialize(new[] { legacySteamEntry }));
+            var legacySteamLoaded = new GameLibraryService(legacySteamStorage).Load();
+            Assert(legacySteamLoaded.Count == 1 && legacySteamLoaded[0].SteamInstallDirectory == string.Empty,
+                "legacy Steam entries without an install path should remain compatible");
 
             var missingResult = new GameLauncher().Launch(new GameEntry
             {
@@ -390,6 +439,8 @@ internal static class Program
                 "main WPF window should expose the installed Steam library scan action");
             Assert(HasGeneratedField(typeof(NightLauncher.MainWindow), "FindGamesButton"),
                 "main WPF window should expose the selected-folder discovery action");
+            Assert(HasGeneratedField(typeof(NightLauncher.MainWindow), "OpenInstallFolderButton"),
+                "main WPF window should expose the open install folder action");
 
             settingsService.SaveBackupDirectory(backupDirectory);
             Assert(string.Equals(settingsService.LoadBackupDirectory(), Path.GetFullPath(backupDirectory), StringComparison.OrdinalIgnoreCase),

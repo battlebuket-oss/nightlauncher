@@ -8,6 +8,7 @@ public sealed class GameEntry
     public string Name { get; set; } = string.Empty;
     public string LaunchMode { get; set; } = "Executable";
     public string SteamAppId { get; set; } = string.Empty;
+    public string SteamInstallDirectory { get; set; } = string.Empty;
     public string ExecutablePath { get; set; } = string.Empty;
     public string LaunchArguments { get; set; } = string.Empty;
     public string WorkingDirectory { get; set; } = string.Empty;
@@ -45,6 +46,7 @@ public sealed class GameEntry
         Name = Name,
         LaunchMode = LaunchMode,
         SteamAppId = SteamAppId,
+        SteamInstallDirectory = SteamInstallDirectory,
         ExecutablePath = ExecutablePath,
         LaunchArguments = LaunchArguments,
         WorkingDirectory = WorkingDirectory,

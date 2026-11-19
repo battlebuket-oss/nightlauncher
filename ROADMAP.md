@@ -3,8 +3,10 @@
 ## Implemented
 - [x] Local game library and JSON persistence
 - [x] Add/edit/remove entries and search
+- [x] Open validated game install folders from the details pane
+- [x] Refresh Steam game names/install paths during discovery while preserving compatibility with older library JSON
 - [x] Direct executable launching and official Steam protocol hand-off
-- [x] Local Steam library discovery from libraryfolders and appmanifest metadata, with bounded parsing, global scan budgets, reparse-point and install-path validation, and manual folder fallback
+- [x] Local Steam library discovery from libraryfolders and appmanifest metadata, with bounded parsing, global scan budgets, reparse-point and install-path validation, manual folder fallback, and install-path refresh
 - [x] JSON import/export with validation and imported-entry confirmation
 - [x] Backward-compatible loading of pre-1.1.0 library files
 - [x] Bounded discovery in a folder explicitly selected by the user

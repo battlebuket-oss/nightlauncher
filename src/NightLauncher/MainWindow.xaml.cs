@@ -1,4 +1,5 @@
 using System.IO;
+using System.Diagnostics;
 using System.Security;
 using Microsoft.Win32;
 using NightLauncher.Models;
@@ -85,7 +86,8 @@ public partial class MainWindow : Window
                game.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                game.Category.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                game.LaunchTargetDescription.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-               game.SteamAppId.Contains(query, StringComparison.OrdinalIgnoreCase);
+               game.SteamAppId.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+               game.SteamInstallDirectory.Contains(query, StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool HasSameLaunchTarget(GameEntry first, GameEntry second)
@@ -154,6 +156,13 @@ public partial class MainWindow : Window
         if (dialog.ShowDialog() != true || dialog.ResultGame is not { } edited)
         {
             return;
+        }
+
+        if (string.Equals(edited.LaunchMode, "Steam", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(edited.SteamAppId, selected.SteamAppId, StringComparison.Ordinal))
+        {
+            // The edit dialog does not change the Steam install location; retain the discovered metadata.
+            edited.SteamInstallDirectory = selected.SteamInstallDirectory;
         }
 
         if (_games.Any(existing => existing.Id != selected.Id && HasSameLaunchTarget(existing, edited)))
@@ -491,14 +500,31 @@ public partial class MainWindow : Window
         }
 
         var additions = new List<GameEntry>();
-        var skipped = 0;
+        var updated = 0;
+        var unchanged = 0;
         foreach (var steamGame in discovered)
         {
-            if (_games.Any(existing =>
-                    string.Equals(existing.LaunchMode, "Steam", StringComparison.OrdinalIgnoreCase) &&
-                    string.Equals(existing.SteamAppId, steamGame.AppId, StringComparison.Ordinal)))
+            var existing = _games.FirstOrDefault(game =>
+                string.Equals(game.LaunchMode, "Steam", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(game.SteamAppId, steamGame.AppId, StringComparison.Ordinal));
+
+            if (existing is not null)
             {
-                skipped++;
+                var metadataChanged =
+                    !string.Equals(existing.Name, steamGame.Name, StringComparison.Ordinal) ||
+                    !string.Equals(existing.SteamInstallDirectory, steamGame.InstallDirectory, StringComparison.OrdinalIgnoreCase);
+
+                if (metadataChanged)
+                {
+                    existing.Name = steamGame.Name;
+                    existing.SteamInstallDirectory = steamGame.InstallDirectory;
+                    updated++;
+                }
+                else
+                {
+                    unchanged++;
+                }
+
                 continue;
             }
 
@@ -507,16 +533,17 @@ public partial class MainWindow : Window
                 Name = steamGame.Name,
                 LaunchMode = "Steam",
                 SteamAppId = steamGame.AppId,
+                SteamInstallDirectory = steamGame.InstallDirectory,
                 Category = "Steam",
                 NeedsLaunchConfirmation = true
             });
         }
 
-        if (additions.Count == 0)
+        if (additions.Count == 0 && updated == 0)
         {
-            MessageBox.Show(this, $"Found {discovered.Count} installed Steam game(s). They are already in your library.",
+            MessageBox.Show(this, $"Found {discovered.Count} installed Steam game(s). They are already up to date.",
                 "Steam library is up to date", MessageBoxButton.OK, MessageBoxImage.Information);
-            SetStatus($"Steam scan complete · {discovered.Count} already in library");
+            SetStatus($"Steam scan complete · {unchanged} already up to date");
             return;
         }
 
@@ -527,12 +554,20 @@ public partial class MainWindow : Window
 
         SaveLibrary();
         RefreshLibraryView();
-        GamesList.SelectedItem = additions[^1];
-        GamesList.ScrollIntoView(additions[^1]);
-        SetStatus($"Steam scan complete · added {additions.Count} game(s)");
 
+        if (additions.Count > 0)
+        {
+            GamesList.SelectedItem = additions[^1];
+            GamesList.ScrollIntoView(additions[^1]);
+        }
+        else if (GamesList.SelectedItem is GameEntry selected)
+        {
+            UpdateDetails(selected);
+        }
+
+        SetStatus($"Steam scan complete · added {additions.Count} · refreshed {updated}");
         MessageBox.Show(this,
-            $"Found {discovered.Count} installed Steam game(s). Added {additions.Count}; skipped {skipped} already in your library.\n\nNew entries require a one-time launch review and are handed to the official Steam client. Steam continues to perform its normal sign-in and ownership checks.",
+            $"Found {discovered.Count} installed Steam game(s). Added {additions.Count}; refreshed {updated}; unchanged {unchanged}.\n\nNew entries require a one-time launch review and are handed to the official Steam client. Steam continues to perform its normal sign-in and ownership checks.",
             "Steam library scan complete", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
@@ -568,6 +603,76 @@ public partial class MainWindow : Window
         }
     }
 
+    private static string? ResolveInstallDirectory(GameEntry game)
+    {
+        try
+        {
+            var candidate = string.Equals(game.LaunchMode, "Steam", StringComparison.OrdinalIgnoreCase)
+                ? game.SteamInstallDirectory
+                : string.IsNullOrWhiteSpace(game.WorkingDirectory)
+                    ? Path.GetDirectoryName(game.ExecutablePath)
+                    : game.WorkingDirectory;
+
+            if (string.IsNullOrWhiteSpace(candidate) || !Path.IsPathFullyQualified(candidate))
+            {
+                return null;
+            }
+
+            var fullPath = Path.GetFullPath(candidate);
+            if (!Directory.Exists(fullPath))
+            {
+                return null;
+            }
+
+            var attributes = File.GetAttributes(fullPath);
+            if ((attributes & FileAttributes.Directory) == 0 ||
+                (attributes & FileAttributes.ReparsePoint) != 0)
+            {
+                return null;
+            }
+
+            return fullPath;
+        }
+        catch (Exception exception) when (exception is ArgumentException or IOException or
+                                           UnauthorizedAccessException or NotSupportedException or SecurityException)
+        {
+            return null;
+        }
+    }
+
+    private void OpenInstallFolder_Click(object sender, RoutedEventArgs e)
+    {
+        if (GamesList.SelectedItem is not GameEntry selected)
+        {
+            return;
+        }
+
+        var installDirectory = ResolveInstallDirectory(selected);
+        if (installDirectory is null)
+        {
+            UpdateDetails(selected);
+            SetStatus("The install folder is no longer available");
+            return;
+        }
+
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = installDirectory,
+                UseShellExecute = true
+            });
+            SetStatus($"Opened install folder for {selected.Name}");
+        }
+        catch (Exception exception) when (exception is Win32Exception or InvalidOperationException or
+                                           UnauthorizedAccessException or IOException)
+        {
+            MessageBox.Show(this, $"Windows could not open that folder.\n\n{exception.Message}",
+                "Open folder failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+            SetStatus("Unable to open install folder");
+        }
+    }
+
     private void UpdateDetails(GameEntry game)
     {
         DetailInitials.Text = game.Initials;
@@ -575,6 +680,10 @@ public partial class MainWindow : Window
         DetailCategory.Text = game.Category;
         DetailPath.Text = game.LaunchTargetDescription;
         DetailLastLaunched.Text = game.LastLaunchedUtc?.ToLocalTime().ToString("g") ?? "Not launched yet";
+        var installDirectory = ResolveInstallDirectory(game);
+        DetailInstallDirectory.Text = installDirectory ?? string.Empty;
+        InstallLocationPanel.Visibility = installDirectory is null ? Visibility.Collapsed : Visibility.Visible;
+        OpenInstallFolderButton.IsEnabled = installDirectory is not null;
         LaunchButton.IsEnabled = true;
         EditButton.IsEnabled = true;
         RemoveButton.IsEnabled = true;
@@ -587,6 +696,9 @@ public partial class MainWindow : Window
         DetailCategory.Text = "No game selected";
         DetailPath.Text = "Choose a game from your library to see its launch target.";
         DetailLastLaunched.Text = "Not launched yet";
+        DetailInstallDirectory.Text = string.Empty;
+        InstallLocationPanel.Visibility = Visibility.Collapsed;
+        OpenInstallFolderButton.IsEnabled = false;
         LaunchButton.IsEnabled = false;
         EditButton.IsEnabled = false;
         RemoveButton.IsEnabled = false;
