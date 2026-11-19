@@ -220,7 +220,7 @@ public partial class SettingsWindow : Window
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException)
         {
-            MessageBox.Show(this, $"Windows could not open the log folder.\\n\\n{exception.Message}",
+            MessageBox.Show(this, $"Windows could not open the log folder.\n\n{exception.Message}",
                 "NightLauncher diagnostics", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
@@ -246,12 +246,12 @@ public partial class SettingsWindow : Window
         {
             var result = _diagnostics.Export(dialog.FileName);
             MessageBox.Show(this,
-                $"Diagnostics bundle exported to:\\n\\n{result.ArchivePath}\\n\\nLog files included: {result.LogFilesIncluded}. Review the ZIP before sharing it; log content may contain local file paths.",
+                $"Diagnostics bundle exported to:\n\n{result.ArchivePath}\n\nLog files included: {result.LogFilesIncluded}. Review the ZIP before sharing it; log content may contain local file paths.",
                 "Diagnostics exported", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidDataException or ArgumentException or InvalidOperationException)
         {
-            MessageBox.Show(this, $"NightLauncher could not export diagnostics.\\n\\n{exception.Message}",
+            MessageBox.Show(this, $"NightLauncher could not export diagnostics.\n\n{exception.Message}",
                 "Diagnostics export failed", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
