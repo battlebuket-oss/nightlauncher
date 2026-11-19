@@ -258,7 +258,7 @@ jobs:
       - name: Check out release metadata
         uses: actions/checkout@v7
         with:
-          ref: \${{ github.sha }}
+          ref: ${{ github.sha }}
 
       - name: Download Windows build artifacts
         uses: actions/download-artifact@v8
@@ -269,24 +269,24 @@ jobs:
       - name: Publish CI build as a prerelease
         if: github.ref == 'refs/heads/main'
         env:
-          GH_TOKEN: \${{ github.token }}
-          RELEASE_TAG: ci-\${{ github.run_number }}
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ci-${{ github.run_number }}
         shell: bash
         run: |
           set -euo pipefail
           APP_VERSION="$(sed -n 's/.*<Version>\([^<]*\)<\/Version>.*/\1/p' src/NightLauncher/NightLauncher.csproj | head -n 1)"
-          INSTALLER="artifacts/NightLauncher-Setup-\${APP_VERSION}.exe"
+          INSTALLER="artifacts/NightLauncher-Setup-${APP_VERSION}.exe"
           ASSETS=( "artifacts/publish/NightLauncher.exe" "artifacts/NightLauncher-win-x64.zip" "$INSTALLER" )
-          for asset in "\${ASSETS[@]}"; do
+          for asset in "${ASSETS[@]}"; do
             test -s "$asset" || { echo "Missing release asset: $asset" >&2; exit 1; }
           done
 
           NOTES="Automated Windows build from main. Development prerelease. Authenticode signing is applied only when the repository signing-certificate secrets are configured."
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release upload "$RELEASE_TAG" "\${ASSETS[@]}" --clobber
+            gh release upload "$RELEASE_TAG" "${ASSETS[@]}" --clobber
           else
-            gh release create "$RELEASE_TAG" "\${ASSETS[@]}" \
-              --title "NightLauncher CI build #\${{ github.run_number }}" \
+            gh release create "$RELEASE_TAG" "${ASSETS[@]}" \
+              --title "NightLauncher CI build #${{ github.run_number }}" \
               --notes "$NOTES" \
               --prerelease
           fi
@@ -294,29 +294,29 @@ jobs:
       - name: Publish versioned GitHub Release assets
         if: startsWith(github.ref, 'refs/tags/')
         env:
-          GH_TOKEN: \${{ github.token }}
-          RELEASE_TAG: \${{ github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
         shell: bash
         run: |
           set -euo pipefail
           APP_VERSION="$(sed -n 's/.*<Version>\([^<]*\)<\/Version>.*/\1/p' src/NightLauncher/NightLauncher.csproj | head -n 1)"
-          EXPECTED_TAG="v\${APP_VERSION}"
+          EXPECTED_TAG="v${APP_VERSION}"
           if [[ "$RELEASE_TAG" != "$EXPECTED_TAG" ]]; then
             echo "Tag '$RELEASE_TAG' does not match application version '$EXPECTED_TAG'." >&2
             exit 1
           fi
 
-          INSTALLER="artifacts/NightLauncher-Setup-\${APP_VERSION}.exe"
+          INSTALLER="artifacts/NightLauncher-Setup-${APP_VERSION}.exe"
           ASSETS=( "artifacts/publish/NightLauncher.exe" "artifacts/NightLauncher-win-x64.zip" "$INSTALLER" )
-          for asset in "\${ASSETS[@]}"; do
+          for asset in "${ASSETS[@]}"; do
             test -s "$asset" || { echo "Missing release asset: $asset" >&2; exit 1; }
           done
 
           NOTES="NightLauncher release. See the repository README and SECURITY.md for launch, backup, and trust details."
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release upload "$RELEASE_TAG" "\${ASSETS[@]}" --clobber
+            gh release upload "$RELEASE_TAG" "${ASSETS[@]}" --clobber
           else
-            gh release create "$RELEASE_TAG" "\${ASSETS[@]}" \
+            gh release create "$RELEASE_TAG" "${ASSETS[@]}" \
               --title "NightLauncher $RELEASE_TAG" \
               --notes "$NOTES"
           fi
