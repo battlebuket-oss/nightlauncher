@@ -15,7 +15,7 @@
 - Keyboard shortcuts: Ctrl+F focuses search, Escape clears search, Enter launches the selected game, and Delete asks to remove the selected game.
 - Steam rescans refresh stored game names and install locations; the details pane shows a validated install folder and can open it in Windows Explorer.
 - Optional launch arguments for direct executable entries.
-- Search and browse a local game library.
+- Search and browse a local game library; combine text search, category, and favorites-only filters.
 - Scan only a folder explicitly selected by the user (bounded to four directory levels and 500 candidates by default); discovered executables are never auto-added or launched.
 - Folder and Steam library discovery run on background tasks so scanning does not block normal window interaction.
 - Import and export the library as JSON.
@@ -75,7 +75,7 @@ The Windows smoke suite covers library persistence, JSON import/export, legacy l
 4. Optionally add launch arguments. Leave them blank unless the game's official documentation requires them.
 5. Save, select the game in the library, and press **Launch**.
 
-Select any game and use the **Category** field to assign a label such as Action, RPG, Racing, or Strategy. Use the category filter beside search to show one category, or combine it with the search box. Use **Add to favorites** in the details pane to pin favorite games above non-favorites. Categories and favorite status are stored locally and preserved by import/export and backups. Choose Name A–Z, Recently played, or Recently added in the sort selector; NightLauncher remembers that choice across restarts, favorites stay pinned first in every mode, and changing the backup folder does not overwrite this preference. Older library files remain compatible. Open **Settings → Diagnostics** to open the local log folder or export a ZIP. The ZIP excludes the library, backups, and settings; logs may still contain local file paths, so review it before sharing.
+Select any game and use the **Category** field to assign a label such as Action, RPG, Racing, or Strategy. Use the category filter beside search to show one category, or combine it with the search box and **Favorites only** checkbox. Use **Add to favorites** in the details pane to pin favorite games above non-favorites. Categories and favorite status are stored locally and preserved by import/export and backups. Choose Name A–Z, Recently played, or Recently added in the sort selector; NightLauncher remembers that choice across restarts, favorites stay pinned first in every mode, and changing the backup folder does not overwrite this preference. Older library files remain compatible. Open **Settings → Diagnostics** to open the local log folder or export a ZIP. The ZIP excludes the library, backups, and settings; logs may still contain local file paths, so review it before sharing.
 
 ## Local data, backups and privacy
 
@@ -95,4 +95,4 @@ NightLauncher starts only the executable path explicitly selected by the user or
 
 ## Project status
 
-Version 1.8.0 adds a user-triggered diagnostics ZIP export with bounded log inclusion and a minimal runtime summary. Recent releases also add persistent sort preferences, alphabetical/recent sorting with favorites pinned, editable game categories and filtering, configurable backups and restore points, local log rotation, a per-user installer, and Windows packaging. NightLauncher remains a development release until trusted signing and hands-on Windows 10/11 compatibility and accessibility checks are completed. See [ROADMAP.md](ROADMAP.md) for remaining release work. GitHub Actions is the source of truth for build, smoke-test, vulnerability-check, and packaging results.
+Version 1.9.0 adds a favorites-only filter that works together with category and text search, alongside the user-triggered diagnostics ZIP export with bounded log inclusion and a minimal runtime summary. Recent releases also add persistent sort preferences, alphabetical/recent sorting with favorites pinned, editable game categories and filtering, configurable backups and restore points, local log rotation, a per-user installer, and Windows packaging. NightLauncher remains a development release until trusted signing and hands-on Windows 10/11 compatibility and accessibility checks are completed. See [ROADMAP.md](ROADMAP.md) for remaining release work. GitHub Actions is the source of truth for build, smoke-test, vulnerability-check, and packaging results.
