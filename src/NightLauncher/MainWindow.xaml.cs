@@ -65,7 +65,21 @@ public partial class MainWindow : Window
         return query.Length == 0 ||
                game.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                game.Category.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-               game.ExecutablePath.Contains(query, StringComparison.OrdinalIgnoreCase);
+               game.LaunchTargetDescription.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+               game.SteamAppId.Contains(query, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool HasSameLaunchTarget(GameEntry first, GameEntry second)
+    {
+        if (string.Equals(first.LaunchMode, "Steam", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(second.LaunchMode, "Steam", StringComparison.OrdinalIgnoreCase))
+        {
+            return string.Equals(first.LaunchMode, "Steam", StringComparison.OrdinalIgnoreCase) &&
+                   string.Equals(second.LaunchMode, "Steam", StringComparison.OrdinalIgnoreCase) &&
+                   string.Equals(first.SteamAppId, second.SteamAppId, StringComparison.OrdinalIgnoreCase);
+        }
+
+        return string.Equals(first.ExecutablePath, second.ExecutablePath, StringComparison.OrdinalIgnoreCase);
     }
 
     private void RefreshLibraryView()
@@ -84,7 +98,7 @@ public partial class MainWindow : Window
         else
         {
             EmptyTitle.Text = "Your library is empty";
-            EmptyMessage.Text = "Add a game by selecting its executable file.";
+            EmptyMessage.Text = "Add a game by selecting its executable file or a Steam App ID.";
         }
     }
 
@@ -96,9 +110,9 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (_games.Any(existing => string.Equals(existing.ExecutablePath, game.ExecutablePath, StringComparison.OrdinalIgnoreCase)))
+        if (_games.Any(existing => HasSameLaunchTarget(existing, game)))
         {
-            MessageBox.Show(this, "That executable is already in your library.", "Already added",
+            MessageBox.Show(this, "That launch target is already in your library.", "Already added",
                 MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
@@ -120,6 +134,13 @@ public partial class MainWindow : Window
         var dialog = new AddGameWindow(selected) { Owner = this };
         if (dialog.ShowDialog() != true || dialog.ResultGame is not { } edited)
         {
+            return;
+        }
+
+        if (_games.Any(existing => existing.Id != selected.Id && HasSameLaunchTarget(existing, edited)))
+        {
+            MessageBox.Show(this, "That launch target is already in your library.", "Already added",
+                MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -168,8 +189,8 @@ public partial class MainWindow : Window
         if (needsConfirmation)
         {
             var answer = MessageBox.Show(this,
-                $"This game entry came from an imported library. Confirm that you trust this executable and its arguments before running it:\n\nExecutable: {selected.ExecutablePath}\nArguments: {selected.LaunchArguments}\n\nContinue?",
-                "Review imported executable", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                $"This game entry came from an imported library. Confirm that you trust this executable and its arguments before running it:\n\nLaunch target: {selected.LaunchTargetDescription}\nArguments: {selected.LaunchArguments}\n\nContinue?",
+                "Review imported launch target", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (answer != MessageBoxResult.Yes)
             {
                 return;
@@ -213,7 +234,7 @@ public partial class MainWindow : Window
             var added = 0;
             foreach (var game in imported)
             {
-                if (_games.Any(existing => string.Equals(existing.ExecutablePath, game.ExecutablePath, StringComparison.OrdinalIgnoreCase)))
+                if (_games.Any(existing => HasSameLaunchTarget(existing, game)))
                 {
                     continue;
                 }
@@ -230,10 +251,10 @@ public partial class MainWindow : Window
             SaveLibrary();
             RefreshLibraryView();
             SetStatus($"Imported {added} game(s)");
-            MessageBox.Show(this, $"Imported {added} game(s). Existing executable paths were skipped.",
+            MessageBox.Show(this, $"Imported {added} game(s). Existing launch targets were skipped.",
                 "Import complete", MessageBoxButton.OK, MessageBoxImage.Information);
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or InvalidDataException)
         {
             MessageBox.Show(this, exception.Message, "Import failed",
                 MessageBoxButton.OK, MessageBoxImage.Error);
@@ -263,7 +284,7 @@ public partial class MainWindow : Window
             MessageBox.Show(this, "Your library backup was exported successfully.",
                 "Export complete", MessageBoxButton.OK, MessageBoxImage.Information);
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidDataException)
         {
             MessageBox.Show(this, exception.Message, "Export failed",
                 MessageBoxButton.OK, MessageBoxImage.Error);
@@ -294,7 +315,7 @@ public partial class MainWindow : Window
         DetailInitials.Text = game.Initials;
         DetailName.Text = game.Name;
         DetailCategory.Text = game.Category;
-        DetailPath.Text = game.ExecutablePath;
+        DetailPath.Text = game.LaunchTargetDescription;
         DetailLastLaunched.Text = game.LastLaunchedUtc?.ToLocalTime().ToString("g") ?? "Not launched yet";
         LaunchButton.IsEnabled = true;
         EditButton.IsEnabled = true;
@@ -306,7 +327,7 @@ public partial class MainWindow : Window
         DetailInitials.Text = "—";
         DetailName.Text = "Select a game";
         DetailCategory.Text = "No game selected";
-        DetailPath.Text = "Choose a game from your library to see its path.";
+        DetailPath.Text = "Choose a game from your library to see its launch target.";
         DetailLastLaunched.Text = "Not launched yet";
         LaunchButton.IsEnabled = false;
         EditButton.IsEnabled = false;
@@ -319,7 +340,7 @@ public partial class MainWindow : Window
         {
             _library.Save(_games);
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidDataException)
         {
             MessageBox.Show(this, $"Your change could not be saved.\n\n{exception.Message}",
                 "Library save failed", MessageBoxButton.OK, MessageBoxImage.Error);

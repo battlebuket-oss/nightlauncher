@@ -175,6 +175,8 @@ public sealed class GameLibraryService
                 throw new InvalidDataException("The library contains a missing or duplicate game identifier.");
             }
 
+            game.LaunchMode = string.IsNullOrWhiteSpace(game.LaunchMode) ? "Executable" : game.LaunchMode.Trim();
+            game.SteamAppId ??= string.Empty;
             game.LaunchArguments ??= string.Empty;
             game.WorkingDirectory ??= string.Empty;
             game.Category ??= "PC Game";
@@ -184,11 +186,33 @@ public sealed class GameLibraryService
                 throw new InvalidDataException("Every game must have a name between 1 and 120 characters.");
             }
 
-            if (string.IsNullOrWhiteSpace(game.ExecutablePath) ||
-                !Path.IsPathFullyQualified(game.ExecutablePath) ||
-                !string.Equals(Path.GetExtension(game.ExecutablePath), ".exe", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(game.LaunchMode, "Steam", StringComparison.OrdinalIgnoreCase))
             {
-                throw new InvalidDataException($"'{game.Name}' must have an absolute path to a Windows .exe file.");
+                game.LaunchMode = "Steam";
+                game.SteamAppId = game.SteamAppId.Trim();
+                if (!uint.TryParse(game.SteamAppId, out var appId) || appId == 0)
+                {
+                    throw new InvalidDataException($"'{game.Name}' must have a valid numeric Steam App ID.");
+                }
+
+                // Steam handles its own launch arguments and entitlement checks.
+                game.ExecutablePath = string.Empty;
+                game.WorkingDirectory = string.Empty;
+                game.LaunchArguments = string.Empty;
+            }
+            else if (string.Equals(game.LaunchMode, "Executable", StringComparison.OrdinalIgnoreCase))
+            {
+                game.LaunchMode = "Executable";
+                if (string.IsNullOrWhiteSpace(game.ExecutablePath) ||
+                    !Path.IsPathFullyQualified(game.ExecutablePath) ||
+                    !string.Equals(Path.GetExtension(game.ExecutablePath), ".exe", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidDataException($"'{game.Name}' must have an absolute path to a Windows .exe file.");
+                }
+            }
+            else
+            {
+                throw new InvalidDataException($"'{game.Name}' uses an unsupported launch mode.");
             }
 
             if (game.LaunchArguments.Length > 4096 || game.Category.Length > 80 || game.WorkingDirectory.Length > 32768)

@@ -2,6 +2,7 @@ using System.IO;
 using Microsoft.Win32;
 using NightLauncher.Models;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace NightLauncher.Views;
 
@@ -19,11 +20,39 @@ public partial class AddGameWindow : Window
             HeadingText.Text = "Edit game";
             NameTextBox.Text = _original.Name;
             ExecutableTextBox.Text = _original.ExecutablePath;
+            SteamAppIdTextBox.Text = _original.SteamAppId;
             ArgumentsTextBox.Text = _original.LaunchArguments;
+            LaunchModeCombo.SelectedIndex =
+                string.Equals(_original.LaunchMode, "Steam", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
         }
+        else
+        {
+            LaunchModeCombo.SelectedIndex = 0;
+        }
+
+        UpdateLaunchModeFields();
     }
 
     public GameEntry? ResultGame { get; private set; }
+
+    private void LaunchMode_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        UpdateLaunchModeFields();
+    }
+
+    private void UpdateLaunchModeFields()
+    {
+        if (ExecutablePanel is null || SteamPanel is null || ArgumentsPanel is null)
+        {
+            return;
+        }
+
+        var mode = (LaunchModeCombo.SelectedItem as ComboBoxItem)?.Tag?.ToString();
+        var isSteam = string.Equals(mode, "Steam", StringComparison.OrdinalIgnoreCase);
+        ExecutablePanel.Visibility = isSteam ? Visibility.Collapsed : Visibility.Visible;
+        SteamPanel.Visibility = isSteam ? Visibility.Visible : Visibility.Collapsed;
+        ArgumentsPanel.Visibility = isSteam ? Visibility.Collapsed : Visibility.Visible;
+    }
 
     private void Browse_Click(object sender, RoutedEventArgs e)
     {
@@ -55,14 +84,41 @@ public partial class AddGameWindow : Window
     private void Save_Click(object sender, RoutedEventArgs e)
     {
         var name = NameTextBox.Text.Trim();
-        var executable = ExecutableTextBox.Text.Trim();
-        var arguments = ArgumentsTextBox.Text.Trim();
+        var mode = (LaunchModeCombo.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "Executable";
 
         if (string.IsNullOrWhiteSpace(name))
         {
             ShowValidation("Enter a display name for this game.");
             return;
         }
+
+        if (string.Equals(mode, "Steam", StringComparison.OrdinalIgnoreCase))
+        {
+            var appId = SteamAppIdTextBox.Text.Trim();
+            if (!uint.TryParse(appId, out var parsedAppId) || parsedAppId == 0)
+            {
+                ShowValidation("Enter a valid numeric Steam App ID.");
+                return;
+            }
+
+            ResultGame = new GameEntry
+            {
+                Id = _original?.Id ?? Guid.NewGuid(),
+                Name = name,
+                LaunchMode = "Steam",
+                SteamAppId = parsedAppId.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                Category = _original?.Category ?? "PC Game",
+                AddedUtc = _original?.AddedUtc ?? DateTimeOffset.UtcNow,
+                LastLaunchedUtc = _original?.LastLaunchedUtc,
+                NeedsLaunchConfirmation = _original?.NeedsLaunchConfirmation ?? false
+            };
+
+            DialogResult = true;
+            return;
+        }
+
+        var executable = ExecutableTextBox.Text.Trim();
+        var arguments = ArgumentsTextBox.Text.Trim();
 
         if (string.IsNullOrWhiteSpace(executable) ||
             !Path.IsPathFullyQualified(executable) ||
@@ -90,6 +146,7 @@ public partial class AddGameWindow : Window
         {
             Id = _original?.Id ?? Guid.NewGuid(),
             Name = name,
+            LaunchMode = "Executable",
             ExecutablePath = executable,
             LaunchArguments = arguments,
             WorkingDirectory = directory,

@@ -25,18 +25,71 @@ try
         Category = "Test"
     };
 
-    service.Save([game]);
+    var steamGame = new GameEntry
+    {
+        Name = "Example Steam Game",
+        LaunchMode = "Steam",
+        SteamAppId = "271590",
+        Category = "Steam"
+    };
+
+    service.Save([game, steamGame]);
     var loaded = service.Load();
-    Assert(loaded.Count == 1, "library save/load should preserve the item count");
+    Assert(loaded.Count == 2, "library save/load should preserve both executable and Steam entries");
     Assert(loaded[0].Name == game.Name, "library save/load should preserve the game name");
     Assert(loaded[0].ExecutablePath == game.ExecutablePath, "library save/load should preserve the executable path");
+    Assert(loaded[1].LaunchMode == "Steam", "library save/load should preserve the Steam launch mode");
+    Assert(loaded[1].SteamAppId == "271590", "library save/load should preserve the Steam App ID");
 
     var exportPath = Path.Combine(root, "backup.json");
     service.Export(exportPath, loaded);
     var imported = service.Import(exportPath);
-    Assert(imported.Count == 1, "JSON export/import should preserve the item count");
-    Assert(imported[0].Name == game.Name, "JSON export/import should preserve the game name");
-    Assert(imported[0].NeedsLaunchConfirmation, "imported games should require a one-time executable review");
+    Assert(imported.Count == 2, "JSON export/import should preserve both launch modes");
+    Assert(imported.All(item => item.NeedsLaunchConfirmation), "imported entries should require a one-time review");
+    Assert(imported[1].LaunchMode == "Steam" && imported[1].SteamAppId == "271590",
+        "JSON export/import should preserve Steam launch metadata");
+
+    var steamUri = GameLauncher.CreateSteamLaunchUri("271590");
+    Assert(steamUri.Scheme == "steam", "Steam launch URI should use the official steam protocol");
+    Assert(steamUri.AbsoluteUri == "steam://rungameid/271590", "Steam launch URI should target the requested App ID");
+
+    var invalidSteamIdRejected = false;
+    try
+    {
+        service.Save([new GameEntry
+        {
+            Name = "Invalid Steam Entry",
+            LaunchMode = "Steam",
+            SteamAppId = "../not-an-app-id"
+        }]);
+    }
+    catch (InvalidDataException)
+    {
+        invalidSteamIdRejected = true;
+    }
+
+    Assert(invalidSteamIdRejected, "library validation must reject malformed Steam App IDs");
+
+    var legacyStorage = Path.Combine(root, "legacy");
+    Directory.CreateDirectory(legacyStorage);
+    var legacyEntry = new
+    {
+        Id = Guid.NewGuid(),
+        Name = "Legacy Executable Entry",
+        ExecutablePath = Path.Combine(root, "LegacyGame.exe"),
+        LaunchArguments = string.Empty,
+        WorkingDirectory = root,
+        Category = "PC Game",
+        AddedUtc = DateTimeOffset.UtcNow,
+        LastLaunchedUtc = (DateTimeOffset?)null,
+        NeedsLaunchConfirmation = false
+    };
+    File.WriteAllText(
+        Path.Combine(legacyStorage, "library.json"),
+        System.Text.Json.JsonSerializer.Serialize(new[] { legacyEntry }));
+    var legacyLoaded = new GameLibraryService(legacyStorage).Load();
+    Assert(legacyLoaded.Count == 1 && legacyLoaded[0].LaunchMode == "Executable",
+        "libraries created before 1.1.0 should default to direct executable mode");
 
     var missingResult = new GameLauncher().Launch(new GameEntry
     {

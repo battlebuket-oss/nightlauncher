@@ -6,6 +6,8 @@ public sealed class GameEntry
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public string Name { get; set; } = string.Empty;
+    public string LaunchMode { get; set; } = "Executable";
+    public string SteamAppId { get; set; } = string.Empty;
     public string ExecutablePath { get; set; } = string.Empty;
     public string LaunchArguments { get; set; } = string.Empty;
     public string WorkingDirectory { get; set; } = string.Empty;
@@ -13,6 +15,12 @@ public sealed class GameEntry
     public DateTimeOffset AddedUtc { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? LastLaunchedUtc { get; set; }
     public bool NeedsLaunchConfirmation { get; set; }
+
+    [JsonIgnore]
+    public string LaunchTargetDescription =>
+        string.Equals(LaunchMode, "Steam", StringComparison.OrdinalIgnoreCase)
+            ? $"Steam App ID: {SteamAppId}"
+            : ExecutablePath;
 
     [JsonIgnore]
     public string Initials
@@ -35,6 +43,8 @@ public sealed class GameEntry
     {
         Id = Id,
         Name = Name,
+        LaunchMode = LaunchMode,
+        SteamAppId = SteamAppId,
         ExecutablePath = ExecutablePath,
         LaunchArguments = LaunchArguments,
         WorkingDirectory = WorkingDirectory,
