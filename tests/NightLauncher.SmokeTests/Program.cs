@@ -257,6 +257,29 @@ internal static class Program
             Assert(legacyLoaded.Count == 1 && legacyLoaded[0].LaunchMode == "Executable",
                 "libraries created before 1.1.0 should default to direct executable mode");
 
+            Assert(legacyLoaded[0].SteamInstallDirectory == string.Empty,
+                "legacy executable entries should default to an empty Steam install directory");
+
+            var legacySteamStorage = Path.Combine(root, "legacy-steam");
+            Directory.CreateDirectory(legacySteamStorage);
+            var legacySteamEntry = new
+            {
+                Id = Guid.NewGuid(),
+                Name = "Legacy Steam Entry",
+                LaunchMode = "Steam",
+                SteamAppId = "271590",
+                Category = "Steam",
+                AddedUtc = DateTimeOffset.UtcNow,
+                LastLaunchedUtc = (DateTimeOffset?)null,
+                NeedsLaunchConfirmation = false
+            };
+            File.WriteAllText(
+                Path.Combine(legacySteamStorage, "library.json"),
+                System.Text.Json.JsonSerializer.Serialize(new[] { legacySteamEntry }));
+            var legacySteamLoaded = new GameLibraryService(legacySteamStorage).Load();
+            Assert(legacySteamLoaded.Count == 1 && legacySteamLoaded[0].SteamInstallDirectory == string.Empty,
+                "legacy Steam entries without an install path should remain compatible");
+
             var missingResult = new GameLauncher().Launch(new GameEntry
             {
                 Name = "Missing executable",
