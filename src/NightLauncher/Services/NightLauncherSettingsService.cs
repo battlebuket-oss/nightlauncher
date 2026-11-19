@@ -104,5 +104,12 @@ public sealed class NightLauncherSettingsService
         }
     }
 
-    private sealed record SettingsDocument(string? BackupDirectory);
+    public sealed class SettingsDocument
+    {
+        public SettingsDocument()
+        {
+        }
+
+        public string? BackupDirectory { get; set; }
+    }
 }
