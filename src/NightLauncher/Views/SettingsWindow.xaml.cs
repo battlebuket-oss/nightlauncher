@@ -218,7 +218,7 @@ public partial class SettingsWindow : Window
                 UseShellExecute = true
             });
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException or System.ComponentModel.Win32Exception)
         {
             MessageBox.Show(this, $"Windows could not open the log folder.\n\n{exception.Message}",
                 "NightLauncher diagnostics", MessageBoxButton.OK, MessageBoxImage.Warning);
