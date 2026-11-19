@@ -107,7 +107,8 @@
                         <Grid Grid.Row="1" Margin="0,0,0,15">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="155"/>
+                                <ColumnDefinition Width="145"/>
+                                <ColumnDefinition Width="145"/>
                             </Grid.ColumnDefinitions>
                             <TextBox x:Name="SearchBox" Margin="0,0,10,0"
                                      AutomationProperties.Name="Search games by name, category, Steam App ID, or install location"
@@ -116,6 +117,14 @@
                                       AutomationProperties.Name="Filter games by category"
                                       ToolTip="Show games from one category"
                                       SelectionChanged="CategoryFilter_SelectionChanged"/>
+                            <ComboBox x:Name="SortModeCombo" Grid.Column="2"
+                                      AutomationProperties.Name="Sort games"
+                                      ToolTip="Choose how games are ordered"
+                                      SelectionChanged="SortMode_SelectionChanged">
+                                <ComboBoxItem Content="Name A–Z" Tag="Name" IsSelected="True"/>
+                                <ComboBoxItem Content="Recently played" Tag="RecentlyPlayed"/>
+                                <ComboBoxItem Content="Recently added" Tag="RecentlyAdded"/>
+                            </ComboBox>
                         </Grid>
                         <Grid Grid.Row="2">
                             <ListBox x:Name="GamesList" AutomationProperties.Name="Games in your library"
