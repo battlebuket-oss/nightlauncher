@@ -36,7 +36,6 @@ public sealed class SteamLibraryDiscoveryService
             try
             {
                 manifests = Directory.EnumerateFiles(steamAppsDirectory, "appmanifest_*.acf", SearchOption.TopDirectoryOnly)
-                    .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
                     .Take(MaximumManifestsPerLibrary)
                     .ToArray();
             }
