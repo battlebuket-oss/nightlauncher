@@ -10,6 +10,7 @@ This checklist separates CI-verifiable checks from tests that require a real int
 - [ ] NuGet vulnerability report is reviewed.
 - [ ] Self-contained EXE publishes.
 - [ ] Inno Setup creates the per-user installer.
+- [ ] CI installs the generated setup EXE as a standard user, verifies the application and shortcut, uninstalls it, and confirms library/settings/backups remain intact.
 - [ ] Portable ZIP and installer are uploaded as release assets.
 - [ ] If a publisher certificate is configured, Authenticode signatures verify for both EXE and installer.
 
