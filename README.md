@@ -36,9 +36,9 @@ For example, the Steam App ID for GTA V Legacy is `271590`. NightLauncher sends 
 
 After the Windows build, smoke tests, vulnerability check, and packaging steps pass, the workflow publishes a CI prerelease containing the self-contained executable, portable ZIP, and per-user Windows installer. The Actions run also retains the artifacts for 30 days.
 
-For a stable, versioned GitHub Release, push a tag such as `v1.3.0`; the workflow will attach the executable, portable ZIP, and installer.
+For a stable, versioned GitHub Release, push a tag matching the application version, such as `v1.3.0`. The workflow attaches the executable, portable ZIP, and installer only after Authenticode signing and signature verification succeed. A tag with a mismatched version is rejected.
 
-The release pipeline supports optional Authenticode signing. To enable it, repository administrators must configure the GitHub Actions secrets `WINDOWS_SIGNING_CERTIFICATE_BASE64` (a base64-encoded PFX file) and `WINDOWS_SIGNING_CERTIFICATE_PASSWORD`. Without both secrets, CI explicitly publishes unsigned binaries; Windows SmartScreen may show an unknown-publisher warning. Only download builds from this repository, and review the source before running it.
+Stable tagged releases require a trusted Authenticode certificate. Configure the GitHub Actions secrets `WINDOWS_SIGNING_CERTIFICATE_BASE64` (a base64-encoded PFX file) and `WINDOWS_SIGNING_CERTIFICATE_PASSWORD`. When the certificate is absent, the workflow blocks stable releases rather than publishing unsigned binaries. Main-branch CI prereleases remain available for testing and are unsigned when the certificate is not configured; Windows SmartScreen may show an unknown-publisher warning. Only download builds from this repository, and review the source before running it.
 
 The Inno Setup installer installs per-user under `%LocalAppData%\\Programs\\NightLauncher`, adds a Start Menu shortcut, and optionally adds a desktop shortcut. Uninstalling the application intentionally leaves the local library and backups untouched.
 
