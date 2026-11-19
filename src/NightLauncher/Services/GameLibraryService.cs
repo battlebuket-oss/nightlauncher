@@ -177,6 +177,7 @@ public sealed class GameLibraryService
 
             game.LaunchMode = string.IsNullOrWhiteSpace(game.LaunchMode) ? "Executable" : game.LaunchMode.Trim();
             game.SteamAppId ??= string.Empty;
+            game.SteamInstallDirectory ??= string.Empty;
             game.LaunchArguments ??= string.Empty;
             game.WorkingDirectory ??= string.Empty;
             game.Category ??= "PC Game";
@@ -195,6 +196,12 @@ public sealed class GameLibraryService
                     throw new InvalidDataException($"'{game.Name}' must have a valid numeric Steam App ID.");
                 }
 
+                if (!string.IsNullOrWhiteSpace(game.SteamInstallDirectory) &&
+                    !Path.IsPathFullyQualified(game.SteamInstallDirectory))
+                {
+                    throw new InvalidDataException($"'{game.Name}' has a Steam install directory that is not an absolute path.");
+                }
+
                 // Steam handles its own launch arguments and entitlement checks.
                 game.ExecutablePath = string.Empty;
                 game.WorkingDirectory = string.Empty;
@@ -203,6 +210,7 @@ public sealed class GameLibraryService
             else if (string.Equals(game.LaunchMode, "Executable", StringComparison.OrdinalIgnoreCase))
             {
                 game.LaunchMode = "Executable";
+                game.SteamInstallDirectory = string.Empty;
                 if (string.IsNullOrWhiteSpace(game.ExecutablePath) ||
                     !Path.IsPathFullyQualified(game.ExecutablePath) ||
                     !string.Equals(Path.GetExtension(game.ExecutablePath), ".exe", StringComparison.OrdinalIgnoreCase))
@@ -215,7 +223,8 @@ public sealed class GameLibraryService
                 throw new InvalidDataException($"'{game.Name}' uses an unsupported launch mode.");
             }
 
-            if (game.LaunchArguments.Length > 4096 || game.Category.Length > 80 || game.WorkingDirectory.Length > 32768)
+            if (game.LaunchArguments.Length > 4096 || game.Category.Length > 80 ||
+                game.WorkingDirectory.Length > 32768 || game.SteamInstallDirectory.Length > 32768)
             {
                 throw new InvalidDataException($"'{game.Name}' contains a field that exceeds the allowed length.");
             }
