@@ -188,6 +188,13 @@ internal static class Program
                 "settings should persist and reload the custom backup directory");
             Assert(reloadedSettings.LoadPreferredSortMode() == "Name",
                 "older settings documents should default to alphabetical sorting");
+            var legacySettingsPath = Path.Combine(settingsDirectory, "legacy-settings.json");
+            File.WriteAllText(legacySettingsPath, System.Text.Json.JsonSerializer.Serialize(new
+            {
+                BackupDirectory = customBackupDirectory
+            }));
+            Assert(new NightLauncherSettingsService(legacySettingsPath).LoadPreferredSortMode() == "Name",
+                "settings files created before sort preferences should default to Name A-Z");
             settingsService.SavePreferredSortMode("RecentlyPlayed");
             Assert(reloadedSettings.LoadPreferredSortMode() == "RecentlyPlayed",
                 "settings should persist the preferred sort mode");
