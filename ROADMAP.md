@@ -23,6 +23,7 @@
 - [x] NuGet vulnerability check in Windows CI
 
 - [x] Weekly Dependabot update checks for NuGet dependencies and GitHub Actions
+- [x] Separate Windows build/test and release-publisher jobs; write permission is limited to main/tag publication
 
 ## Remaining release hardening
 - [ ] Configure a trusted publisher Authenticode certificate in repository secrets and verify signed artifacts
