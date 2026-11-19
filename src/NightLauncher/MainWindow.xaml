@@ -8,7 +8,8 @@
         MinHeight="650"
         WindowStartupLocation="CenterScreen"
         Background="#0B1020"
-        Foreground="#E2E8F0">
+        Foreground="#E2E8F0"
+        PreviewKeyDown="MainWindow_PreviewKeyDown">
     <Grid Margin="18">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="226"/>
@@ -104,9 +105,11 @@
                             <TextBlock x:Name="CountText" Grid.Column="1" Text="0 games" Foreground="#64748B" FontSize="11" VerticalAlignment="Center"/>
                         </Grid>
                         <TextBox x:Name="SearchBox" Grid.Row="1" Margin="0,0,0,15"
-                                 ToolTip="Search your library" TextChanged="SearchBox_TextChanged"/>
+                                 AutomationProperties.Name="Search games by name, category, Steam App ID, or install location"
+                                 ToolTip="Search your library (Ctrl+F)" TextChanged="SearchBox_TextChanged"/>
                         <Grid Grid.Row="2">
-                            <ListBox x:Name="GamesList" SelectionChanged="GamesList_SelectionChanged">
+                            <ListBox x:Name="GamesList" AutomationProperties.Name="Games in your library"
+                                     SelectionChanged="GamesList_SelectionChanged">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <Border Background="#172338" CornerRadius="10" Padding="12">

@@ -1,6 +1,8 @@
 using System.IO;
 using System.Reflection;
 using System.Windows;
+using System.Windows.Automation;
+using System.Windows.Controls;
 using NightLauncher.Models;
 using NightLauncher.Services;
 
@@ -441,6 +443,17 @@ internal static class Program
                 "main WPF window should expose the selected-folder discovery action");
             Assert(HasGeneratedField(typeof(NightLauncher.MainWindow), "OpenInstallFolderButton"),
                 "main WPF window should expose the open install folder action");
+
+            Assert(typeof(NightLauncher.MainWindow).GetMethod("MainWindow_PreviewKeyDown", BindingFlags.Instance | BindingFlags.NonPublic) is not null,
+                "main WPF window should expose its keyboard shortcut handler");
+            var searchControl = mainWindow.FindName("SearchBox") as TextBox;
+            Assert(searchControl is not null &&
+                   AutomationProperties.GetName(searchControl) == "Search games by name, category, Steam App ID, or install location",
+                "search control should expose an explicit automation name");
+            var gamesListControl = mainWindow.FindName("GamesList") as ListBox;
+            Assert(gamesListControl is not null &&
+                   AutomationProperties.GetName(gamesListControl) == "Games in your library",
+                "game list should expose an explicit automation name");
 
             settingsService.SaveBackupDirectory(backupDirectory);
             Assert(string.Equals(settingsService.LoadBackupDirectory(), Path.GetFullPath(backupDirectory), StringComparison.OrdinalIgnoreCase),

@@ -10,6 +10,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Input;
 
 namespace NightLauncher;
 
@@ -586,6 +587,41 @@ public partial class MainWindow : Window
         {
             LoadLibrary();
             SetStatus($"Library restored · {_games.Count} game(s)");
+        }
+    }
+
+    private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.F && Keyboard.Modifiers == ModifierKeys.Control)
+        {
+            SearchBox.Focus();
+            SearchBox.SelectAll();
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.Escape && (SearchBox.IsKeyboardFocusWithin || SearchBox.Text.Length > 0))
+        {
+            SearchBox.Clear();
+            GamesList.Focus();
+            e.Handled = true;
+            return;
+        }
+
+        if (Keyboard.Modifiers != ModifierKeys.None || !GamesList.IsKeyboardFocusWithin)
+        {
+            return;
+        }
+
+        if (e.Key == Key.Enter && GamesList.SelectedItem is GameEntry)
+        {
+            Launch_Click(this, new RoutedEventArgs());
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Delete && GamesList.SelectedItem is GameEntry)
+        {
+            Remove_Click(this, new RoutedEventArgs());
+            e.Handled = true;
         }
     }
 
