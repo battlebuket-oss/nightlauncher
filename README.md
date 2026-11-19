@@ -21,6 +21,7 @@
 - Backward-compatible loading of library files created before Steam launch support.
 - Imported entries require a one-time confirmation before launch.
 - Dependabot checks NuGet packages and GitHub Actions weekly and opens update pull requests.
+- Windows build/test jobs use read-only repository permissions; a separate publisher job receives release-write permission only for main-branch and version-tag pushes.
 - No telemetry, cloud account, credential collection, game-file patching, DLL injection, process-memory access, or automatic network calls.
 
 ## Steam launch mode
