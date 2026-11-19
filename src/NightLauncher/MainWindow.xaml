@@ -179,7 +179,7 @@
                                 AutomationProperties.Name="Toggle favorite status for selected game"
                                 Style="{StaticResource QuietButtonStyle}" IsEnabled="False"
                                 Margin="0,0,0,9" Click="ToggleFavorite_Click"/>
-                        <Button x:Name="LaunchButton" Content="▶   Launch game" Style="{StaticResource PrimaryButtonStyle>"
+                        <Button x:Name="LaunchButton" Content="▶   Launch game" Style="{StaticResource PrimaryButtonStyle}"
                                 IsEnabled="False" Click="Launch_Click" Padding="12,13"/>
                         <Button x:Name="EditButton" Content="Edit details" Margin="0,9,0,0" IsEnabled="False"
                                 Click="Edit_Click"/>
