@@ -25,7 +25,7 @@ This checklist separates CI-verifiable checks from tests that require a real int
 - [ ] Launch from Start Menu shortcut and optional desktop shortcut.
 - [ ] Add, edit, remove, search, import, and export game entries.
 - [ ] Add a Steam App ID and confirm the request opens the official Steam client.
-- [ ] Scan installed Steam libraries automatically and from a manually selected portable/custom library folder; verify entries are added without changing manifests or reading credentials.
+- [ ] Scan installed Steam libraries automatically and from a manually selected portable/custom library folder; verify entries refresh their saved install path, the details pane opens valid folders, and no manifests or credentials are changed.
 - [ ] Scan a user-selected folder, select candidate executables, and verify no file is launched during discovery.
 - [ ] Confirm discovered/imported entries require a one-time trust review before launching.
 - [ ] Select a custom backup folder and restart the app to confirm the preference persists.
