@@ -63,7 +63,13 @@ jobs:
         run: |
           $programFiles = [Environment]::GetFolderPath("ProgramFiles")
           $programFilesX86 = [Environment]::GetFolderPath("ProgramFilesX86")
-          $existingCompiler = Get-ChildItem -Path @($programFiles, $programFilesX86) -Filter "ISCC.exe" -File -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+          $compilerPaths = @(
+            (Join-Path $programFilesX86 "Inno Setup 6\ISCC.exe"),
+            (Join-Path $programFiles "Inno Setup 6\ISCC.exe"),
+            (Join-Path $programFilesX86 "Inno Setup 7\ISCC.exe"),
+            (Join-Path $programFiles "Inno Setup 7\ISCC.exe")
+          )
+          $existingCompiler = $compilerPaths | Where-Object { Test-Path $_ } | Select-Object -First 1
           if (-not $existingCompiler) {
             winget install --id JRSoftware.InnoSetup --exact --silent --accept-package-agreements --accept-source-agreements
             if ($LASTEXITCODE -ne 0) {
@@ -80,13 +86,19 @@ jobs:
           $ErrorActionPreference = "Stop"
           $programFiles = [Environment]::GetFolderPath("ProgramFiles")
           $programFilesX86 = [Environment]::GetFolderPath("ProgramFilesX86")
-          $iscc = Get-ChildItem -Path @($programFiles, $programFilesX86) -Filter "ISCC.exe" -File -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+          $compilerPaths = @(
+            (Join-Path $programFilesX86 "Inno Setup 6\ISCC.exe"),
+            (Join-Path $programFiles "Inno Setup 6\ISCC.exe"),
+            (Join-Path $programFilesX86 "Inno Setup 7\ISCC.exe"),
+            (Join-Path $programFiles "Inno Setup 7\ISCC.exe")
+          )
+          $iscc = $compilerPaths | Where-Object { Test-Path $_ } | Select-Object -First 1
           if (-not $iscc) {
             throw "ISCC.exe was not found after installing Inno Setup."
           }
 
           $sourceDir = (Resolve-Path "artifacts/publish").Path
-          & $iscc.FullName "/DMyAppVersion=1.2.0" "/DSourceDir=$sourceDir" "installer/NightLauncher.iss"
+          & $iscc "/DMyAppVersion=1.2.0" "/DSourceDir=$sourceDir" "installer/NightLauncher.iss"
           if ($LASTEXITCODE -ne 0) {
             throw "Inno Setup compilation failed."
           }
