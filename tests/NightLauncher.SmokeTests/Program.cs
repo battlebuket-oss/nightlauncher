@@ -333,7 +333,7 @@ internal static class Program
                 linkedInstallCreated = true;
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or
-                                               PlatformNotSupportedException or NotSupportedException)
+                                               NotSupportedException)
             {
                 // Some Windows configurations do not grant symbolic-link creation to the test user.
             }
@@ -360,7 +360,7 @@ internal static class Program
                 linkedCommonCreated = true;
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or
-                                               PlatformNotSupportedException or NotSupportedException)
+                                               NotSupportedException)
             {
                 // Some Windows configurations do not grant symbolic-link creation to the test user.
             }
