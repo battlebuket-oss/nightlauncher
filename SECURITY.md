@@ -2,15 +2,16 @@
 
 ## Scope
 
-NightLauncher is a local Windows game-library manager. It stores metadata and starts a user-selected executable through the standard Windows process API.
+NightLauncher is a local Windows game-library manager. It can start an executable explicitly selected by the user or open a Steam protocol URI containing a validated numeric App ID. Steam protocol requests are handed to the registered Steam client; Steam is responsible for authentication, entitlement checks and the actual game launch.
 
 It intentionally does not:
 - read, store, or request Steam, Rockstar, or other launcher credentials;
 - bypass DRM, authentication, licence, or ownership checks;
-- patch game executables or libraries;
+- patch game executables, manifests, launchers, or libraries;
 - inject DLLs, attach to game processes, or read/write process memory;
 - download executable content or run remote scripts;
-- silently elevate privileges.
+- silently elevate privileges;
+- scan the PC or enumerate arbitrary folders without the user's action.
 
 ## Reporting a vulnerability
 
