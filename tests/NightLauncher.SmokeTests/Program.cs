@@ -186,6 +186,29 @@ internal static class Program
             var reloadedSettings = new NightLauncherSettingsService(settingsPath);
             Assert(string.Equals(reloadedSettings.LoadBackupDirectory(), Path.GetFullPath(customBackupDirectory), StringComparison.OrdinalIgnoreCase),
                 "settings should persist and reload the custom backup directory");
+            Assert(reloadedSettings.LoadPreferredSortMode() == "Name",
+                "older settings documents should default to alphabetical sorting");
+            settingsService.SavePreferredSortMode("RecentlyPlayed");
+            Assert(reloadedSettings.LoadPreferredSortMode() == "RecentlyPlayed",
+                "settings should persist the preferred sort mode");
+            settingsService.SaveBackupDirectory(customBackupDirectory);
+            Assert(reloadedSettings.LoadPreferredSortMode() == "RecentlyPlayed",
+                "changing the backup directory should preserve the preferred sort mode");
+            settingsService.SavePreferredSortMode("RecentlyAdded");
+            Assert(string.Equals(reloadedSettings.LoadBackupDirectory(), Path.GetFullPath(customBackupDirectory), StringComparison.OrdinalIgnoreCase),
+                "changing the sort mode should preserve the custom backup directory");
+
+            var invalidSortModeRejected = false;
+            try
+            {
+                settingsService.SavePreferredSortMode("RunAnything");
+            }
+            catch (ArgumentException)
+            {
+                invalidSortModeRejected = true;
+            }
+
+            Assert(invalidSortModeRejected, "settings should reject unsupported sort modes");
 
             var invalidBackupDirectoryRejected = false;
             try
@@ -212,6 +235,17 @@ internal static class Program
             }
 
             Assert(malformedSettingsRejected, "settings service should reject malformed JSON");
+            var malformedSortSettingsRejected = false;
+            try
+            {
+                _ = new NightLauncherSettingsService(malformedSettingsPath).LoadPreferredSortMode();
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                malformedSortSettingsRejected = true;
+            }
+
+            Assert(malformedSortSettingsRejected, "settings service should reject malformed JSON when loading sort preferences");
 
             var corruptLibraryDirectory = Path.Combine(root, "corrupt-library");
             Directory.CreateDirectory(corruptLibraryDirectory);
