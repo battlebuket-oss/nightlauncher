@@ -10,6 +10,8 @@
 - [x] Manual candidate selection before adding discovered executables; discovered entries require first-launch confirmation
 - [x] Automatic pre-change local backups with 20-copy retention
 - [x] Manual backup creation and validated restore with a pre-restore safety copy
+- [x] Persist a user-selected backup directory in local settings
+- [x] Select any available recovery point in Settings for restore
 - [x] Local log rotation
 - [x] Per-user Windows installer and uninstaller definition
 - [x] CI packaging for EXE, portable ZIP, and installer
@@ -23,8 +25,7 @@
 - [ ] Run the installer and uninstaller on a clean Windows 10 VM and a clean Windows 11 VM; confirm user data is preserved
 - [ ] Complete manual keyboard navigation, screen-reader, and high-contrast testing
 - [ ] Add UI automation that interacts with the live app window on an interactive desktop runner
-- [ ] Add user-selectable backup location and a restore-point picker
-- [ ] Add broader malformed-library and disk-failure tests
+- [x] Add malformed settings/library JSON and blocked-storage failure tests
 - [ ] Perform final code review and release signing verification
 
 Any future feature must preserve the no-DRM-bypass, no-credential-collection, and local-first security boundaries.
