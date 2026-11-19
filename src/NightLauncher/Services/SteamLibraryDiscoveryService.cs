@@ -40,8 +40,7 @@ public sealed class SteamLibraryDiscoveryService
                     .Take(MaximumManifestsPerLibrary)
                     .ToArray();
             }
-            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or
-                                               DirectoryNotFoundException or SecurityException)
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or SecurityException)
             {
                 continue;
             }
