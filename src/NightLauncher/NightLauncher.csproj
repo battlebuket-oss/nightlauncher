@@ -14,6 +14,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseAppHost>true</UseAppHost>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
     <DebugType>embedded</DebugType>
   </PropertyGroup>
 </Project>
