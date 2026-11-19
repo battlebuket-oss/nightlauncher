@@ -116,12 +116,14 @@ public sealed class GameLibraryService
             ?? throw new InvalidOperationException("The library destination has no parent directory.");
 
         Directory.CreateDirectory(directory);
-        var temporaryPath = fullPath + ".tmp";
+        var temporaryPath = fullPath + $".{Guid.NewGuid():N}.tmp";
+        var temporaryCreated = false;
 
         try
         {
-            using (var stream = new FileStream(temporaryPath, FileMode.Create, FileAccess.Write, FileShare.None))
+            using (var stream = new FileStream(temporaryPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
             {
+                temporaryCreated = true;
                 JsonSerializer.Serialize(stream, games, SerializerOptions);
                 stream.Flush(flushToDisk: true);
             }
@@ -130,7 +132,7 @@ public sealed class GameLibraryService
         }
         finally
         {
-            if (File.Exists(temporaryPath))
+            if (temporaryCreated && File.Exists(temporaryPath))
             {
                 try
                 {

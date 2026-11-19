@@ -34,7 +34,10 @@ internal static class Program
         try
         {
             var storage = Path.Combine(root, "data");
+            Directory.CreateDirectory(storage);
             var service = new GameLibraryService(storage);
+            var libraryTempPath = service.LibraryPath + ".tmp";
+            File.WriteAllText(libraryTempPath, "pre-existing user file must remain untouched");
             var game = new GameEntry
             {
                 Name = "Example Game",
@@ -54,6 +57,8 @@ internal static class Program
             };
 
             service.Save([game, steamGame]);
+            Assert(File.ReadAllText(libraryTempPath) == "pre-existing user file must remain untouched",
+                "library writes should not overwrite an existing neighboring .tmp file");
             var loaded = service.Load();
             Assert(loaded.Count == 2, "library save/load should preserve both executable and Steam entries");
             Assert(loaded[0].Name == game.Name, "library save/load should preserve the game name");
