@@ -1,8 +1,11 @@
 using System.IO;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Data;
 using NightLauncher.Models;
 using NightLauncher.Services;
 
@@ -76,6 +79,19 @@ internal static class Program
             Assert(imported.Count == 2, "JSON export/import should preserve both launch modes");
             Assert(imported.All(item => item.NeedsLaunchConfirmation), "imported entries should require a one-time review");
             Assert(imported[0].IsFavorite, "JSON export/import should preserve favorite flags");
+
+            var sortableGames = new ObservableCollection<GameEntry>
+            {
+                new() { Name = "Zulu non-favorite" },
+                new() { Name = "Zulu favorite", IsFavorite = true },
+                new() { Name = "Alpha favorite", IsFavorite = true }
+            };
+            var sortedGames = new ListCollectionView(sortableGames);
+            sortedGames.SortDescriptions.Add(new SortDescription(nameof(GameEntry.IsFavorite), ListSortDirection.Descending));
+            sortedGames.SortDescriptions.Add(new SortDescription(nameof(GameEntry.Name), ListSortDirection.Ascending));
+            Assert(sortedGames.Cast<GameEntry>().Select(item => item.Name).SequenceEqual(
+                    ["Alpha favorite", "Zulu favorite", "Zulu non-favorite"]),
+                "library view should pin favorites first and sort each group alphabetically");
             Assert(imported[1].LaunchMode == "Steam" && imported[1].SteamAppId == "271590",
                 "JSON export/import should preserve Steam launch metadata");
             Assert(imported[1].SteamInstallDirectory == steamGame.SteamInstallDirectory,
@@ -137,6 +153,7 @@ internal static class Program
             backupService.RestoreBackup(backupPath);
             var restored = service.Load();
             Assert(restored.Count == 2, "restore should recover the backed-up game entries");
+            Assert(restored[0].IsFavorite, "backup restore should preserve favorite flags");
             Assert(restored.Any(item => item.Name == "Example Steam Game"), "restore should recover the Steam entry");
             Assert(restored.All(item => item.NeedsLaunchConfirmation), "restored entries should require a one-time launch review");
             Assert(backupService.GetBackups().Count == 2, "restore should preserve the pre-restore library as a safety backup");
