@@ -310,7 +310,21 @@ public partial class MainWindow : Window
         }
     }
 
-    private void DiscoverGames_Click(object sender, RoutedEventArgs e)
+    private void SetDiscoveryBusy(bool isBusy, string? status = null)
+    {
+        FindGamesButton.IsEnabled = !isBusy;
+        ScanSteamButton.IsEnabled = !isBusy;
+        System.Windows.Input.Mouse.OverrideCursor = isBusy
+            ? System.Windows.Input.Cursors.Wait
+            : null;
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            SetStatus(status);
+        }
+    }
+
+    private async void DiscoverGames_Click(object sender, RoutedEventArgs e)
     {
         var folderDialog = new OpenFolderDialog
         {
@@ -324,10 +338,11 @@ public partial class MainWindow : Window
         }
 
         IReadOnlyList<DiscoveredGameExecutable> candidates;
+        SetDiscoveryBusy(true, "Scanning selected folder for game executables…");
         try
         {
-            System.Windows.Input.Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
-            candidates = _discovery.DiscoverExecutables(folderDialog.FolderName);
+            var selectedFolder = folderDialog.FolderName;
+            candidates = await Task.Run(() => _discovery.DiscoverExecutables(selectedFolder));
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException)
         {
@@ -337,7 +352,7 @@ public partial class MainWindow : Window
         }
         finally
         {
-            System.Windows.Input.Mouse.OverrideCursor = null;
+            SetDiscoveryBusy(false);
         }
 
         if (candidates.Count == 0)
@@ -393,13 +408,13 @@ public partial class MainWindow : Window
         SetStatus($"Discovered and added {additions.Count} game(s) · launch review required");
     }
 
-    private void DiscoverSteamGames_Click(object sender, RoutedEventArgs e)
+    private async void DiscoverSteamGames_Click(object sender, RoutedEventArgs e)
     {
         IReadOnlyList<DiscoveredSteamGame> discovered;
+        SetDiscoveryBusy(true, "Checking installed Steam libraries…");
         try
         {
-            System.Windows.Input.Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
-            discovered = _steamDiscovery.DiscoverInstalledGames();
+            discovered = await Task.Run(() => _steamDiscovery.DiscoverInstalledGames());
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or
                                            InvalidDataException or SecurityException or ArgumentException)
@@ -410,7 +425,7 @@ public partial class MainWindow : Window
         }
         finally
         {
-            System.Windows.Input.Mouse.OverrideCursor = null;
+            SetDiscoveryBusy(false);
         }
 
         if (discovered.Count == 0)
@@ -445,10 +460,11 @@ public partial class MainWindow : Window
                         }
                     }
 
+                    SetDiscoveryBusy(true, "Scanning selected Steam library…");
                     try
                     {
-                        System.Windows.Input.Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
-                        discovered = _steamDiscovery.DiscoverInstalledGames([selectedRoot]);
+                        var manualSteamRoot = selectedRoot;
+                        discovered = await Task.Run(() => _steamDiscovery.DiscoverInstalledGames([manualSteamRoot]));
                     }
                     catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or
                                                        InvalidDataException or SecurityException or ArgumentException)
@@ -459,7 +475,7 @@ public partial class MainWindow : Window
                     }
                     finally
                     {
-                        System.Windows.Input.Mouse.OverrideCursor = null;
+                        SetDiscoveryBusy(false);
                     }
                 }
             }

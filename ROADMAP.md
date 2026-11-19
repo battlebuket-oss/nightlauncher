@@ -8,6 +8,7 @@
 - [x] JSON import/export with validation and imported-entry confirmation
 - [x] Backward-compatible loading of pre-1.1.0 library files
 - [x] Bounded discovery in a folder explicitly selected by the user
+- [x] Run Steam and folder discovery on background tasks and disable overlapping scan actions while scanning
 - [x] Manual candidate selection before adding discovered executables; discovered entries require first-launch confirmation
 - [x] Automatic pre-change local backups with 20-copy retention
 - [x] Manual backup creation and validated restore with a pre-restore safety copy

@@ -14,6 +14,7 @@
 - Optional launch arguments for direct executable entries.
 - Search and browse a local game library.
 - Scan only a folder explicitly selected by the user (bounded to four directory levels and 500 candidates by default); discovered executables are never auto-added or launched.
+- Folder and Steam library discovery run on background tasks so scanning does not block normal window interaction.
 - Import and export the library as JSON.
 - Local-only storage under the user's Local AppData folder.
 - Automatic pre-change backups with a rolling retention limit of 20 copies.
