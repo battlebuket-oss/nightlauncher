@@ -109,6 +109,7 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="145"/>
                                 <ColumnDefinition Width="145"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBox x:Name="SearchBox" Margin="0,0,10,0"
                                      AutomationProperties.Name="Search games by name, category, Steam App ID, or install location"
@@ -125,6 +126,13 @@
                                 <ComboBoxItem Content="Recently played" Tag="RecentlyPlayed"/>
                                 <ComboBoxItem Content="Recently added" Tag="RecentlyAdded"/>
                             </ComboBox>
+                            <CheckBox x:Name="FavoritesOnlyCheckBox" Grid.Column="3"
+                                      Content="Favorites only" Foreground="#CBD5E1" FontSize="11"
+                                      AutomationProperties.Name="Show favorites only"
+                                      ToolTip="Show only games marked as favorites"
+                                      VerticalAlignment="Center" Margin="10,0,0,0"
+                                      Checked="FavoritesOnly_CheckedChanged"
+                                      Unchecked="FavoritesOnly_CheckedChanged"/>
                         </Grid>
                         <Grid Grid.Row="2">
                             <ListBox x:Name="GamesList" AutomationProperties.Name="Games in your library"
