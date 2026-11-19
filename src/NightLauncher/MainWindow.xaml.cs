@@ -99,8 +99,10 @@ public partial class MainWindow : Window
         var matchesCategory = string.IsNullOrWhiteSpace(selectedCategory) ||
                               string.Equals(selectedCategory, "All categories", StringComparison.OrdinalIgnoreCase) ||
                               string.Equals(game.Category, selectedCategory, StringComparison.OrdinalIgnoreCase);
+        var favoritesOnly = FavoritesOnlyCheckBox.IsChecked == true;
+        var matchesFavorite = !favoritesOnly || game.IsFavorite;
 
-        return matchesCategory && (query.Length == 0 ||
+        return matchesCategory && matchesFavorite && (query.Length == 0 ||
                game.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                game.Category.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                game.LaunchTargetDescription.Contains(query, StringComparison.OrdinalIgnoreCase) ||
@@ -753,6 +755,8 @@ public partial class MainWindow : Window
     }
 
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e) => RefreshLibraryView();
+
+    private void FavoritesOnly_CheckedChanged(object sender, RoutedEventArgs e) => RefreshLibraryView();
 
     private void GamesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
