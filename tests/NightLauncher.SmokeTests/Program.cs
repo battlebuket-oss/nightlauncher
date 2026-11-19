@@ -185,7 +185,11 @@ internal static class Program
             var settingsService = new NightLauncherSettingsService(settingsPath);
             Assert(settingsService.LoadBackupDirectory() is null, "a new settings file should use the default backup directory");
             var customBackupDirectory = Path.Combine(root, "external-backups");
+            var settingsTempPath = settingsPath + ".tmp";
+            File.WriteAllText(settingsTempPath, "pre-existing user file must remain untouched");
             settingsService.SaveBackupDirectory(customBackupDirectory);
+            Assert(File.ReadAllText(settingsTempPath) == "pre-existing user file must remain untouched",
+                "settings writes should not overwrite an existing neighboring .tmp file");
             var reloadedSettings = new NightLauncherSettingsService(settingsPath);
             Assert(string.Equals(reloadedSettings.LoadBackupDirectory(), Path.GetFullPath(customBackupDirectory), StringComparison.OrdinalIgnoreCase),
                 "settings should persist and reload the custom backup directory");
@@ -228,8 +232,12 @@ internal static class Program
             File.WriteAllText(Path.Combine(diagnosticsDirectory, "library.json"), "local game library data");
             File.WriteAllText(Path.Combine(diagnosticsDirectory, "backups.zip"), "private recovery data");
             var diagnosticsArchivePath = Path.Combine(root, "NightLauncher-Diagnostics.zip");
+            var diagnosticsTempPath = diagnosticsArchivePath + ".tmp";
+            File.WriteAllText(diagnosticsTempPath, "pre-existing user file must remain untouched");
             var diagnosticsResult = new DiagnosticsService(diagnosticsDirectory).Export(diagnosticsArchivePath);
             Assert(diagnosticsResult.LogFilesIncluded == 2, "diagnostics export should include only recognized log files");
+            Assert(File.ReadAllText(diagnosticsTempPath) == "pre-existing user file must remain untouched",
+                "diagnostics export should not overwrite an existing neighboring .tmp file");
             using (var diagnosticsArchive = ZipFile.OpenRead(diagnosticsArchivePath))
             {
                 var entryNames = diagnosticsArchive.Entries.Select(entry => entry.FullName).ToHashSet(StringComparer.OrdinalIgnoreCase);
