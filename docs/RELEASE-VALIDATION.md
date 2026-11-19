@@ -33,6 +33,6 @@ This checklist separates CI-verifiable checks from tests that require a real int
 - [ ] Create a backup, make a library change, and restore the previous backup.
 - [ ] Confirm restoring creates a safety backup of the current library.
 - [ ] Uninstall and confirm the user's library, backups, and logs remain intact.
-- [ ] Verify keyboard navigation, high contrast, scaling, and screen-reader labels.
+- [ ] Verify keyboard navigation (Ctrl+F, Escape, Enter, Delete), high contrast, scaling, and screen-reader labels.
 
 The GitHub-hosted Windows runner can validate compilation, service tests, XAML initialization, and packaging. It does not substitute for these interactive desktop checks on physical or virtual Windows installations.
