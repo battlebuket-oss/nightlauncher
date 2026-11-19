@@ -521,6 +521,50 @@ internal static class Program
             categoryFilter.SelectedItem = allCategories;
             Assert(gamesListControl?.Items.Count == 2,
                 "selecting All categories should restore the full library view");
+
+            var sortMode = mainWindow.FindName("SortModeCombo") as ComboBox;
+            Assert(sortMode is not null && AutomationProperties.GetName(sortMode) == "Sort games",
+                "sort selector should expose an explicit automation name");
+            var now = DateTimeOffset.UtcNow;
+            mainGames.Clear();
+            mainGames.Add(new GameEntry
+            {
+                Name = "Zulu favorite", Category = "Action", IsFavorite = true,
+                LastLaunchedUtc = now.AddDays(-3), AddedUtc = now.AddDays(-10)
+            });
+            mainGames.Add(new GameEntry
+            {
+                Name = "Alpha recent", Category = "RPG",
+                LastLaunchedUtc = now, AddedUtc = now
+            });
+            mainGames.Add(new GameEntry
+            {
+                Name = "Beta older", Category = "Action",
+                LastLaunchedUtc = now.AddDays(-1), AddedUtc = now.AddDays(-1)
+            });
+            refreshLibraryView?.Invoke(mainWindow, null);
+            var recentPlayOption = sortMode?.Items.OfType<ComboBoxItem>().FirstOrDefault(item =>
+                string.Equals(item.Tag?.ToString(), "RecentlyPlayed", StringComparison.OrdinalIgnoreCase));
+            Assert(recentPlayOption is not null, "sort selector should offer Recently played");
+            sortMode!.SelectedItem = recentPlayOption;
+            Assert(((GameEntry)gamesListControl!.Items[0]).Name == "Zulu favorite" &&
+                   ((GameEntry)gamesListControl.Items[1]).Name == "Alpha recent" &&
+                   ((GameEntry)gamesListControl.Items[2]).Name == "Beta older",
+                "recently played sorting should order by launch time while keeping favorites first");
+            var recentAddedOption = sortMode.Items.OfType<ComboBoxItem>().First(item =>
+                string.Equals(item.Tag?.ToString(), "RecentlyAdded", StringComparison.OrdinalIgnoreCase));
+            sortMode.SelectedItem = recentAddedOption;
+            Assert(((GameEntry)gamesListControl.Items[0]).Name == "Zulu favorite" &&
+                   ((GameEntry)gamesListControl.Items[1]).Name == "Alpha recent" &&
+                   ((GameEntry)gamesListControl.Items[2]).Name == "Beta older",
+                "recently added sorting should order by added date while keeping favorites first");
+            var alphabeticalOption = sortMode.Items.OfType<ComboBoxItem>().First(item =>
+                string.Equals(item.Tag?.ToString(), "Name", StringComparison.OrdinalIgnoreCase));
+            sortMode.SelectedItem = alphabeticalOption;
+            Assert(((GameEntry)gamesListControl.Items[0]).Name == "Zulu favorite" &&
+                   ((GameEntry)gamesListControl.Items[1]).Name == "Alpha recent" &&
+                   ((GameEntry)gamesListControl.Items[2]).Name == "Beta older",
+                "alphabetical sorting should order names within the favorites and non-favorites groups");
             var favoriteButton = mainWindow.FindName("ToggleFavoriteButton") as Button;
             Assert(favoriteButton is not null && !favoriteButton.IsEnabled,
                 "favorite toggle should initialize disabled until a game is selected");
