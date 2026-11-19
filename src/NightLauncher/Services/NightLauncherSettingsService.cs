@@ -44,12 +44,19 @@ public sealed class NightLauncherSettingsService
             return null;
         }
 
-        if (!Path.IsPathFullyQualified(settings.BackupDirectory))
+        if (settings.BackupDirectory.Length > 32_000 || !Path.IsPathFullyQualified(settings.BackupDirectory))
         {
-            throw new InvalidDataException("The configured backup directory must be an absolute path.");
+            throw new InvalidDataException("The configured backup directory must be an absolute path within the supported path length.");
         }
 
-        return Path.GetFullPath(settings.BackupDirectory);
+        try
+        {
+            return Path.GetFullPath(settings.BackupDirectory);
+        }
+        catch (Exception exception) when (exception is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            throw new InvalidDataException("The configured backup directory path is invalid.", exception);
+        }
     }
 
     public void SaveBackupDirectory(string? backupDirectory)
