@@ -50,17 +50,13 @@ public sealed class DiagnosticsService
             ?? throw new InvalidOperationException("The diagnostics archive has no parent folder.");
         Directory.CreateDirectory(parent);
 
-        var temporaryPath = archivePath + ".tmp";
+        var temporaryPath = archivePath + $".{Guid.NewGuid():N}.tmp";
         var includedFiles = new List<string>();
         long totalBytes = 0;
         try
         {
-            if (File.Exists(temporaryPath))
-            {
-                File.Delete(temporaryPath);
-            }
-
-            using (var archive = ZipFile.Open(temporaryPath, ZipArchiveMode.Create))
+            using (var temporaryStream = new FileStream(temporaryPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None))
+            using (var archive = new ZipArchive(temporaryStream, ZipArchiveMode.Create))
             {
                 foreach (var fileName in AllowedLogNames)
                 {
