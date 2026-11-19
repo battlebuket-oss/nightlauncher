@@ -1,4 +1,5 @@
 using System.IO;
+using System.IO.Compression;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Reflection;
@@ -216,6 +217,53 @@ internal static class Program
             }
 
             Assert(invalidSortModeRejected, "settings should reject unsupported sort modes");
+
+            var diagnosticsDirectory = Path.Combine(root, "diagnostics-logs");
+            Directory.CreateDirectory(diagnosticsDirectory);
+            File.WriteAllText(Path.Combine(diagnosticsDirectory, "latest.log"), "latest error details");
+            File.WriteAllText(Path.Combine(diagnosticsDirectory, "latest.1.log"), "older error details");
+            File.WriteAllText(Path.Combine(diagnosticsDirectory, "private-settings.json"), "private token material that must not be exported");
+            File.WriteAllText(Path.Combine(diagnosticsDirectory, "library.json"), "local game library data");
+            File.WriteAllText(Path.Combine(diagnosticsDirectory, "backups.zip"), "private recovery data");
+            var diagnosticsArchivePath = Path.Combine(root, "NightLauncher-Diagnostics.zip");
+            var diagnosticsResult = new DiagnosticsService(diagnosticsDirectory).Export(diagnosticsArchivePath);
+            Assert(diagnosticsResult.LogFilesIncluded == 2, "diagnostics export should include only recognized log files");
+            using (var diagnosticsArchive = ZipFile.OpenRead(diagnosticsArchivePath))
+            {
+                var entryNames = diagnosticsArchive.Entries.Select(entry => entry.FullName).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                Assert(entryNames.SetEquals(["latest.log", "latest.1.log", "diagnostics-summary.txt"]),
+                    "diagnostics ZIP should contain only approved log files and the summary");
+                using var summaryReader = new StreamReader(diagnosticsArchive.GetEntry("diagnostics-summary.txt")!.Open());
+                var summary = summaryReader.ReadToEnd();
+                Assert(summary.Contains("NightLauncher version:", StringComparison.Ordinal) &&
+                       summary.Contains("Runtime:", StringComparison.Ordinal) &&
+                       summary.Contains("Log files included: 2", StringComparison.Ordinal),
+                    "diagnostics ZIP should include a minimal app/runtime summary");
+            }
+
+            File.WriteAllBytes(Path.Combine(diagnosticsDirectory, "latest.2.log"), new byte[(2 * 1024 * 1024) + 1]);
+            var oversizedDiagnosticsRejected = false;
+            try
+            {
+                _ = new DiagnosticsService(diagnosticsDirectory).Export(Path.Combine(root, "oversized-diagnostics.zip"));
+            }
+            catch (InvalidDataException)
+            {
+                oversizedDiagnosticsRejected = true;
+            }
+
+            Assert(oversizedDiagnosticsRejected, "diagnostics export should reject oversized log files");
+            var archiveInsideLogFolderRejected = false;
+            try
+            {
+                _ = new DiagnosticsService(diagnosticsDirectory).Export(Path.Combine(diagnosticsDirectory, "bundle.zip"));
+            }
+            catch (ArgumentException)
+            {
+                archiveInsideLogFolderRejected = true;
+            }
+
+            Assert(archiveInsideLogFolderRejected, "diagnostics archives should not be written inside the source log folder");
 
             var invalidBackupDirectoryRejected = false;
             try
@@ -519,6 +567,9 @@ internal static class Program
                 "main WPF window should expose its launch control in the generated XAML fields");
             Assert(HasGeneratedField(typeof(NightLauncher.MainWindow), "ScanSteamButton"),
                 "main WPF window should expose the installed Steam library scan action");
+            Assert(HasGeneratedField(typeof(NightLauncher.Views.SettingsWindow), "OpenLogsFolderButton") &&
+                   HasGeneratedField(typeof(NightLauncher.Views.SettingsWindow), "ExportDiagnosticsButton"),
+                "settings window should generate accessible log-folder and diagnostics-export controls");
             Assert(HasGeneratedField(typeof(NightLauncher.MainWindow), "FindGamesButton"),
                 "main WPF window should expose the selected-folder discovery action");
             Assert(HasGeneratedField(typeof(NightLauncher.MainWindow), "OpenInstallFolderButton"),

@@ -7,6 +7,7 @@
 - [x] Editable user-defined game categories with a combined category/search filter
 - [x] Alphabetical, recently played, and recently added sorting with favorites pinned first
 - [x] Persist preferred library sort mode without overwriting backup-folder settings
+- [x] User-triggered diagnostics ZIP export limited to bounded app logs and a basic runtime summary
 - [x] Open validated game install folders from the details pane
 - [x] Keyboard shortcuts for search, clear, launch, and remove; explicit automation names for search and game list
 - [x] Refresh Steam game names/install paths during discovery while preserving compatibility with older library JSON

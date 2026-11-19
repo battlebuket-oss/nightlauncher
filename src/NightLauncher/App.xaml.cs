@@ -9,6 +9,11 @@ public partial class App : Application
     private const long MaximumLogBytes = 2 * 1024 * 1024;
     private const int RetainedLogFiles = 3;
 
+    public static string LogDirectory => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "NightLauncher",
+        "logs");
+
     protected override void OnStartup(StartupEventArgs e)
     {
         DispatcherUnhandledException += OnDispatcherUnhandledException;
@@ -40,10 +45,7 @@ public partial class App : Application
     {
         try
         {
-            var folder = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "NightLauncher",
-                "logs");
+            var folder = LogDirectory;
             Directory.CreateDirectory(folder);
             var path = Path.Combine(folder, "latest.log");
 

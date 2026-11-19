@@ -72,6 +72,22 @@
 
                 <Border Background="#111A2B" CornerRadius="10" Padding="15" Margin="0,16,0,0">
                     <StackPanel>
+                        <TextBlock Text="DIAGNOSTICS" FontWeight="Bold" Foreground="#E9D5FF"/>
+                        <TextBlock Text="Open the local log folder or export a ZIP containing only NightLauncher log files and a basic app/runtime summary."
+                                   TextWrapping="Wrap" Foreground="#CBD5E1" Margin="0,7,0,10"/>
+                        <WrapPanel>
+                            <Button x:Name="OpenLogsFolderButton" Content="Open logs folder" Margin="0,0,8,8"
+                                    AutomationProperties.Name="Open NightLauncher logs folder" Click="OpenLogsFolder_Click"/>
+                            <Button x:Name="ExportDiagnosticsButton" Content="Export diagnostics ZIP" Margin="0,0,8,8"
+                                    AutomationProperties.Name="Export NightLauncher diagnostics ZIP" Click="ExportDiagnostics_Click"/>
+                        </WrapPanel>
+                        <TextBlock Text="Review the logs before sharing. Error details may contain local file paths. The exporter does not include your game library, backups, or settings file."
+                                   TextWrapping="Wrap" Foreground="#94A3B8" FontSize="11"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Background="#111A2B" CornerRadius="10" Padding="15" Margin="0,16,0,0">
+                    <StackPanel>
                         <TextBlock Text="LOCAL-FIRST BY DESIGN" FontWeight="Bold" Foreground="#E9D5FF"/>
                         <TextBlock Text="No telemetry, account login, cloud sync, credential collection, automatic downloads, DLL injection, process-memory access, or game-file patching."
                                    TextWrapping="Wrap" Foreground="#CBD5E1" Margin="0,8,0,0"/>
