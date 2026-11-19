@@ -80,7 +80,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ci-${{ github.run_number }}
         run: |
-          gh release create $env:RELEASE_TAG "artifacts/publish/NightLauncher.exe" "artifacts/NightLauncher-win-x64.zip" --title "NightLauncher CI build #${{ github.run_number }}" --notes "Automated Windows build from main. This is an unsigned development prerelease." --prerelease
+          gh release view $env:RELEASE_TAG *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $env:RELEASE_TAG "artifacts/publish/NightLauncher.exe" "artifacts/NightLauncher-win-x64.zip" --clobber
+          } else {
+            gh release create $env:RELEASE_TAG "artifacts/publish/NightLauncher.exe" "artifacts/NightLauncher-win-x64.zip" --title "NightLauncher CI build #${{ github.run_number }}" --notes "Automated Windows build from main. This is an unsigned development prerelease." --prerelease
+          }
 
       - name: Publish versioned GitHub Release assets
         if: startsWith(github.ref, 'refs/tags/')
