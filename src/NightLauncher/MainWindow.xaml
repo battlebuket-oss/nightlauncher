@@ -43,7 +43,7 @@
                     <Button Content="＋   Add a game" HorizontalContentAlignment="Left" Style="{StaticResource QuietButtonStyle}" Click="AddGame_Click"/>
                     <Button Content="⇧   Import library" HorizontalContentAlignment="Left" Style="{StaticResource QuietButtonStyle}" Click="Import_Click"/>
                     <Button Content="⇩   Export library" HorizontalContentAlignment="Left" Style="{StaticResource QuietButtonStyle}" Click="Export_Click"/>
-                    <Button Content="⌕   Find games in folder" HorizontalContentAlignment="Left" Style="{StaticResource QuietButtonStyle}" Click="DiscoverGames_Click"/>
+                    <Button x:Name="FindGamesButton" Content="⌕   Find games in folder" HorizontalContentAlignment="Left" Style="{StaticResource QuietButtonStyle}" Click="DiscoverGames_Click"/>
                     <Button x:Name="ScanSteamButton" Content="▣   Find installed Steam games" HorizontalContentAlignment="Left" Style="{StaticResource QuietButtonStyle}" ToolTip="Read local Steam library metadata and add installed games" Click="DiscoverSteamGames_Click"/>
                 </StackPanel>
 
