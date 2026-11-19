@@ -55,6 +55,14 @@ internal static class Program
             Assert(loaded[0].IsFavorite, "library save/load should preserve the favorite flag");
             Assert(loaded[0].FavoriteIndicator == "★", "favorite entries should expose the star indicator for the library view");
             Assert(loaded[0].Copy().IsFavorite, "game entry copies should preserve the favorite flag");
+
+            var favoriteNotifications = new List<string?>();
+            game.PropertyChanged += (_, args) => favoriteNotifications.Add(args.PropertyName);
+            game.IsFavorite = false;
+            game.IsFavorite = true;
+            Assert(favoriteNotifications.Contains(nameof(GameEntry.IsFavorite)) &&
+                   favoriteNotifications.Contains(nameof(GameEntry.FavoriteIndicator)),
+                "favorite changes should notify WPF bindings for the favorite flag and star indicator");
             Assert(loaded[1].LaunchMode == "Steam", "library save/load should preserve the Steam launch mode");
             Assert(loaded[1].SteamAppId == "271590", "library save/load should preserve the Steam App ID");
             Assert(loaded[1].SteamInstallDirectory == steamGame.SteamInstallDirectory,
