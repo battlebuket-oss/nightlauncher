@@ -11,6 +11,7 @@
 - Add a Steam game using its numeric Steam App ID.
 - Discover installed Steam games across the configured local Steam libraries by reading `libraryfolders.vdf` and `appmanifest_*.acf`; when automatic detection misses a portable or custom Steam install, select its library folder manually. Steam metadata parsing has per-file and total scan limits, uses bounded reads, rejects reparse-point folders and nested install paths, and never modifies Steam files. Newly discovered entries require a one-time review and launch through the official Steam client.
 - Steam entries are handed to the official Steam client using its registered `steam://rungameid/<appid>` protocol.
+- Steam rescans refresh stored game names and install locations; the details pane shows a validated install folder and can open it in Windows Explorer.
 - Optional launch arguments for direct executable entries.
 - Search and browse a local game library.
 - Scan only a folder explicitly selected by the user (bounded to four directory levels and 500 candidates by default); discovered executables are never auto-added or launched.
