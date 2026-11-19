@@ -87,6 +87,25 @@ internal static class Program
 
             Assert(invalidSteamIdRejected, "library validation must reject malformed Steam App IDs");
 
+            var invalidSteamInstallDirectoryRejected = false;
+            try
+            {
+                service.Save([new GameEntry
+                {
+                    Name = "Invalid Steam install path",
+                    LaunchMode = "Steam",
+                    SteamAppId = "271590",
+                    SteamInstallDirectory = "relative\\steam\\game"
+                }]);
+            }
+            catch (InvalidDataException)
+            {
+                invalidSteamInstallDirectoryRejected = true;
+            }
+
+            Assert(invalidSteamInstallDirectoryRejected,
+                "library validation must reject relative Steam install directories");
+
             var backupDirectory = Path.Combine(root, "backups");
             var backupService = new GameLibraryBackupService(service, backupDirectory, maximumBackups: 3);
             var backupPath = backupService.CreateBackup();
