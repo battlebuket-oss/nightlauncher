@@ -4,6 +4,7 @@
 - [x] Local game library and JSON persistence
 - [x] Add/edit/remove entries and search
 - [x] Open validated game install folders from the details pane
+- [x] Keyboard shortcuts for search, clear, launch, and remove; explicit automation names for search and game list
 - [x] Refresh Steam game names/install paths during discovery while preserving compatibility with older library JSON
 - [x] Direct executable launching and official Steam protocol hand-off
 - [x] Local Steam library discovery from libraryfolders and appmanifest metadata, with bounded parsing, global scan budgets, reparse-point and install-path validation, manual folder fallback, and install-path refresh
