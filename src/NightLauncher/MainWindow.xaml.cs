@@ -43,6 +43,8 @@ public partial class MainWindow : Window
         _backups = new GameLibraryBackupService(_library, backupDirectory);
         GamesList.ItemsSource = _games;
         _gamesView = CollectionViewSource.GetDefaultView(_games);
+        _gamesView.SortDescriptions.Add(new SortDescription(nameof(GameEntry.IsFavorite), ListSortDirection.Descending));
+        _gamesView.SortDescriptions.Add(new SortDescription(nameof(GameEntry.Name), ListSortDirection.Ascending));
         _gamesView.Filter = MatchesSearch;
         LoadLibrary();
     }
@@ -240,6 +242,24 @@ public partial class MainWindow : Window
         selected.LastLaunchedUtc = DateTimeOffset.UtcNow;
         SaveLibrary();
         UpdateDetails(selected);
+    }
+
+    private void ToggleFavorite_Click(object sender, RoutedEventArgs e)
+    {
+        if (GamesList.SelectedItem is not GameEntry selected)
+        {
+            return;
+        }
+
+        selected.IsFavorite = !selected.IsFavorite;
+        SaveLibrary();
+        RefreshLibraryView();
+        GamesList.SelectedItem = selected;
+        GamesList.ScrollIntoView(selected);
+        UpdateDetails(selected);
+        SetStatus(selected.IsFavorite
+            ? $"Added {selected.Name} to favorites"
+            : $"Removed {selected.Name} from favorites");
     }
 
     private void Import_Click(object sender, RoutedEventArgs e)
@@ -716,6 +736,7 @@ public partial class MainWindow : Window
         DetailCategory.Text = game.Category;
         DetailPath.Text = game.LaunchTargetDescription;
         DetailLastLaunched.Text = game.LastLaunchedUtc?.ToLocalTime().ToString("g") ?? "Not launched yet";
+        ToggleFavoriteButton.Content = game.IsFavorite ? "★   Remove from favorites" : "☆   Add to favorites";
         var installDirectory = ResolveInstallDirectory(game);
         DetailInstallDirectory.Text = installDirectory ?? string.Empty;
         InstallLocationPanel.Visibility = installDirectory is null ? Visibility.Collapsed : Visibility.Visible;
@@ -723,6 +744,7 @@ public partial class MainWindow : Window
         LaunchButton.IsEnabled = true;
         EditButton.IsEnabled = true;
         RemoveButton.IsEnabled = true;
+        ToggleFavoriteButton.IsEnabled = true;
     }
 
     private void ClearSelection()
@@ -738,6 +760,7 @@ public partial class MainWindow : Window
         LaunchButton.IsEnabled = false;
         EditButton.IsEnabled = false;
         RemoveButton.IsEnabled = false;
+        ToggleFavoriteButton.IsEnabled = false;
     }
 
     private void SaveLibrary()

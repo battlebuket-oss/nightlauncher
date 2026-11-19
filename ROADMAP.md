@@ -3,6 +3,7 @@
 ## Implemented
 - [x] Local game library and JSON persistence
 - [x] Add/edit/remove entries and search
+- [x] Persistent favorites with a star indicator, favorite-first ordering, and backward-compatible import/export/backup support
 - [x] Open validated game install folders from the details pane
 - [x] Keyboard shortcuts for search, clear, launch, and remove; explicit automation names for search and game list
 - [x] Refresh Steam game names/install paths during discovery while preserving compatibility with older library JSON

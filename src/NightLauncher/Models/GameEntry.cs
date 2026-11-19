@@ -1,9 +1,17 @@
 using System.Text.Json.Serialization;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace NightLauncher.Models;
 
-public sealed class GameEntry
+public sealed class GameEntry : INotifyPropertyChanged
 {
+    private bool _isFavorite;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     public Guid Id { get; set; } = Guid.NewGuid();
     public string Name { get; set; } = string.Empty;
     public string LaunchMode { get; set; } = "Executable";
@@ -16,6 +24,25 @@ public sealed class GameEntry
     public DateTimeOffset AddedUtc { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? LastLaunchedUtc { get; set; }
     public bool NeedsLaunchConfirmation { get; set; }
+
+    public bool IsFavorite
+    {
+        get => _isFavorite;
+        set
+        {
+            if (_isFavorite == value)
+            {
+                return;
+            }
+
+            _isFavorite = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(FavoriteIndicator));
+        }
+    }
+
+    [JsonIgnore]
+    public string FavoriteIndicator => IsFavorite ? "★" : string.Empty;
 
     [JsonIgnore]
     public string LaunchTargetDescription =>
@@ -53,6 +80,7 @@ public sealed class GameEntry
         Category = Category,
         AddedUtc = AddedUtc,
         LastLaunchedUtc = LastLaunchedUtc,
-        NeedsLaunchConfirmation = NeedsLaunchConfirmation
+        NeedsLaunchConfirmation = NeedsLaunchConfirmation,
+        IsFavorite = IsFavorite
     };
 }
